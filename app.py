@@ -60,6 +60,10 @@ def series_real():
         })
 
 
+from kbo_scraper import get_next_week_games
+from series_checker import predict_matchups
+
+
 
 @app.route("/next_matchups", methods=["POST"])
 def next_matchups():
@@ -99,6 +103,38 @@ def next_matchups():
                 }]
             }
         })
+
+
+from kbo_scraper import get_kbo_rankings
+
+@app.route("/ranking", methods=["POST"])
+def ranking():
+    try:
+        rank_text = get_kbo_rankings()
+
+        return jsonify({
+            "version": "2.0",
+            "template": {
+                "outputs": [{
+                    "simpleText": {
+                        "text": rank_text
+                    }
+                }]
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "version": "2.0",
+            "template": {
+                "outputs": [{
+                    "simpleText": {
+                        "text": f"⚠️ 순위 불러오기 실패: {str(e)}"
+                    }
+                }]
+            }
+        })
+
+
 
 
 if __name__ == "__main__":

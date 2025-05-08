@@ -118,3 +118,30 @@ def get_next_week_games():
 
     return games
 
+
+def get_kbo_rankings():
+    url = "https://sports.news.naver.com/kbaseball/record/index?category=kbo"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    res = requests.get(url, headers=headers)
+    soup = BeautifulSoup(res.text, "html.parser")
+
+    table = soup.select_one(".tbl_box")
+    rows = table.select("tbody tr")
+
+    result = "📊 KBO 순위표\n\n"
+    result += "순위 팀  승-패-무  승률  게임차\n"
+
+    for row in rows:
+        cols = row.find_all("td")
+        if len(cols) >= 6:
+            rank = cols[0].text.strip()
+            team = cols[1].text.strip()
+            record = cols[2].text.strip()
+            win_rate = cols[3].text.strip()
+            gap = cols[5].text.strip()
+
+            result += f"{rank}. {team} {record}  {win_rate}  {gap}\n"
+
+    return result.strip()
+
+
