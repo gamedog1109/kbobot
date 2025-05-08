@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def get_today_kbo_results():
     today = datetime.today().strftime('%Y%m%d')
