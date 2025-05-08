@@ -2,6 +2,7 @@ from kbo_scraper import get_today_kbo_results, get_recent_series_games
 from flask import Flask, request, jsonify
 from series_checker import analyze_series
 import get_next_week_games import predict_matchups
+import get_kbo_rankings
 
 app = Flask(__name__)
 
@@ -60,11 +61,6 @@ def series_real():
         })
 
 
-from kbo_scraper import get_next_week_games
-from series_checker import predict_matchups
-
-
-
 @app.route("/next_matchups", methods=["POST"])
 def next_matchups():
     try:
@@ -105,7 +101,7 @@ def next_matchups():
         })
 
 
-from kbo_scraper import get_kbo_rankings
+
 
 @app.route("/ranking", methods=["POST"])
 def ranking():
