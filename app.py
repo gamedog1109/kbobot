@@ -22,35 +22,42 @@ def kbo_results():
 
 
 
-@app.route("/series_test", methods=["POST"])
-def series_test():
-    fake_series = [
-        {"home": "LG", "away": "두산", "home_score": 4, "away_score": 2, "stadium": "잠실"},
-        {"home": "두산", "away": "LG", "home_score": 3, "away_score": 6, "stadium": "잠실"},
-        {"home": "LG", "away": "두산", "home_score": 2, "away_score": 1, "stadium": "잠실"}
-    ]
+@app.route("/series_real", methods=["POST"])
+def series_real():
+    try:
+        recent_games = get_recent_series_games(days=4)  # 최근 4일 경기 긁기
+        summary, penalties = analyze_series(recent_games)
 
-    summary, penalties = analyze_series(fake_series)
+        msg = summary + "\n"
+        if penalties:
+            msg += "\n💸 벌금 낼 사람:\n"
+            for name, amount in penalties:
+                msg += f"- {name}: {amount}원\n"
+        else:
+            msg += "\n벌금 낼 사람 없음!"
 
-    msg = summary + "\n"
-    if penalties:
-        msg += "\n💸 벌금 낼 사람:\n"
-        for name, amount in penalties:
-            msg += f"- {name}: {amount}원\n"
-    else:
-        msg += "\n벌금 낼 사람 없음!"
+        return jsonify({
+            "version": "2.0",
+            "template": {
+                "outputs": [{
+                    "simpleText": {
+                        "text": msg
+                    }
+                }]
+            }
+        })
 
-    return jsonify({
-        "version": "2.0",
-        "template": {
-            "outputs": [{
-                "simpleText": {
-                    "text": msg
-                }
-            }]
-        }
-    })
-
+    except Exception as e:
+        return jsonify({
+            "version": "2.0",
+            "template": {
+                "outputs": [{
+                    "simpleText": {
+                        "text": f"⚠️ 시리즈 분석 중 오류 발생:\n{str(e)}"
+                    }
+                }]
+            }
+        })
 
 
 if __name__ == "__main__":
