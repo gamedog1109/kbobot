@@ -83,3 +83,38 @@ def get_recent_series_games(days=4):
             result.extend(games)
 
     return result
+
+
+def get_next_week_games():
+    from datetime import datetime, timedelta
+
+    games = []
+
+    for i in range(7):
+        target_date = datetime.today() + timedelta(days=i)
+        date_str = target_date.strftime('%Y%m%d')
+        url = f"https://sports.news.naver.com/kbaseball/schedule/index?date={date_str}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers)
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        game_rows = soup.select(".sch_tb .tb_wrap > table tbody tr")
+
+        for row in game_rows:
+            teams = row.select("td.team")
+            stadium = row.select_one("td.place")
+
+            if teams and stadium:
+                home = teams[0].text.strip()
+                away = teams[1].text.strip()
+                stadium_name = stadium.text.strip()
+
+                games.append({
+                    "date": target_date.strftime('%Y-%m-%d'),
+                    "home": home,
+                    "away": away,
+                    "stadium": stadium_name
+                })
+
+    return games
+

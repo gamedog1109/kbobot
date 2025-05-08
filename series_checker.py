@@ -80,3 +80,32 @@ def analyze_series(games: list):
                     fan_penalty.append((name, penalty))
 
     return result_summary, fan_penalty
+
+
+def predict_matchups(games):
+    with open("fans.json", "r", encoding="utf-8") as f:
+        fans = json.load(f)
+
+    team_to_fans = {}
+    for name, team in fans.items():
+        team_to_fans.setdefault(team, []).append(name)
+
+    matchup_notice = {}
+    for game in games:
+        home = game["home"]
+        away = game["away"]
+        date = game["date"]
+
+        if home in team_to_fans and away in team_to_fans:
+            home_fans = team_to_fans[home]
+            away_fans = team_to_fans[away]
+
+            match_line = f"{home} vs {away}  ({date})"
+
+            for hfan in home_fans:
+                for afan in away_fans:
+                    key = match_line
+                    matchup_notice.setdefault(key, set()).add((hfan, afan))
+
+    return matchup_notice
+
