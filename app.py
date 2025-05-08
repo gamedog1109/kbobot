@@ -1,4 +1,4 @@
-from kbo_scraper import get_today_kbo_results
+from kbo_scraper import get_today_kbo_results, get_recent_series_games
 from flask import Flask, request, jsonify
 from series_checker import analyze_series
 
