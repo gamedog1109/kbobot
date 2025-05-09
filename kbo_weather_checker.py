@@ -39,7 +39,7 @@ def get_weather(lat, lon, stadium_name):
 
 # 오늘 경기 기준 메시지 만들기
 def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
-    today = (datetime.utcnow() + timedelta(hours=9)).date()
+   today = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d")
     
     try:
         df = pd.read_csv(csv_path)

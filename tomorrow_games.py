@@ -11,7 +11,8 @@ def get_tomorrow_game_info():
         with open("fans.json", "r", encoding="utf-8") as f:
             fans = json.load(f)
 
-        tomorrow = datetime.utcnow() + timedelta(hours=9)
+        kst_now = datetime.utcnow() + timedelta(hours=9)
+        tomorrow = (kst_now + timedelta(days=0)).date()
         df_tomorrow = df[df["date"] == tomorrow]
 
         if df_tomorrow.empty:
