@@ -61,7 +61,7 @@ def get_weather(lat, lon, stadium_name):
     else:
         return f"{weather} ☁️ (우천 가능성 낮음)"
 
-@app.route("/", methods=["POST"])
+@app.route("/weather", methods=["POST"])
 def kbo_weather_bot():
     tomorrow = (datetime.today() + timedelta(days=1)).strftime("%Y-%m-%d")
     df = pd.read_csv("KBO_2025_May_to_August.csv")
