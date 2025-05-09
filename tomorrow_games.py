@@ -1,9 +1,9 @@
-# today_games.py
+# tomorrow_games.py
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
-def get_today_game_info():
+def get_tomorrow_game_info():
     try:
         df = pd.read_csv("KBO_2025_May_to_August.csv")
         df["date"] = pd.to_datetime(df["date"]).dt.date
@@ -11,14 +11,14 @@ def get_today_game_info():
         with open("fans.json", "r", encoding="utf-8") as f:
             fans = json.load(f)
 
-        today = datetime.today().date()
-        df_today = df[df["date"] == today]
+        tomorrow = datetime.today().date()
+        df_tomorrow = df[df["date"] == today]
 
-        if df_today.empty:
-            return f"📅 오늘({today})은 예정된 경기가 없습니다."
+        if df_tomorrow.empty:
+            return f"📅 오늘({tomorrow})은 예정된 경기가 없습니다."
 
-        result = [f"📅 오늘({today}) KBO 경기 일정\n"]
-        for _, row in df_today.iterrows():
+        result = [f"📅 오늘({totomorrow KBO 경기 일정\n"]
+        for _, row in df_tomorrow.iterrows():
             home, away, stadium = row["home_team"], row["away_team"], row["stadium"]
             home_fans = [n for n, t in fans.items() if t == home]
             away_fans = [n for n, t in fans.items() if t == away]
