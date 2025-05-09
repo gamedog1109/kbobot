@@ -25,11 +25,11 @@ def get_tomorrow_game_info():
 
             line = f"- {home} vs {away} @ {stadium}"
             if home_fans and away_fans:
-                line += f"\n  🙌 {' & '.join(home_fans)} vs {' & '.join(away_fans)} → 찬조금 납부 예정시리즈 빅매치!!!🔥"
+                line += f"\n  🙌 {' & '.join(home_fans)}님 vs {' & '.join(away_fans)}님 → 찬조금 납부 시리즈 빅매치🔥"
             elif home_fans:
-                line += f"\n  😌 {' & '.join(home_fans)}만 응원 중… 찬조금은 PASS!"
+                line += f"\n  😌 {' & '.join(home_fans)}님 응원 중… 찬조금 없는 매치"
             elif away_fans:
-                line += f"\n  😌 {' & '.join(away_fans)}만 응원 중… 찬조금은 PASS!"
+                line += f"\n  😌 {' & '.join(away_fans)}님 응원 중… 찬조금 없는 매치"
             else:
                 line += f"\n  😶 팬 없음. 관심 無 경기!"
             result.append(line)
