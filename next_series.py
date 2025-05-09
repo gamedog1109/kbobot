@@ -44,9 +44,9 @@ def get_next_series_info(csv_path="KBO_2025_May_to_August.csv", fans_path="fans.
             if home_fans and away_fans:
                 line += f"\n  🙌 {' & '.join(home_fans)}님 vs {' & '.join(away_fans)}님 → 찬조금 시리즈 빅매치🔥"
             elif home_fans:
-                line += f"\n  😌 {' & '.join(home_fans)}님만 있는 경기 (무난한 경기)"
+                line += f"\n  😌 {' & '.join(home_fans)}님 응원 경기 (무난한 경기)"
             elif away_fans:
-                line += f"\n  😌 {' & '.join(away_fans)}님만 있는 경기 (무난한 경기)"
+                line += f"\n  😌 {' & '.join(away_fans)}님 응원 경기 (무난한 경기)"
             else:
                 line += "\n  😶 팬 없음. 관심 노잼 시리즈!"
 
