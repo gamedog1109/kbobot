@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 def get_today_kbo_results():
-    today = datetime.today().strftime('%Y%m%d')
-    url = f"https://sports.news.naver.com/kbaseball/schedule/index?date={today}"
+    date = "2025-05-05"
+    url = f"https://sports.news.naver.com/kbaseball/schedule/index?date={date}"
     headers = {"User-Agent": "Mozilla/5.0"}
     res = requests.get(url, headers=headers)
     soup = BeautifulSoup(res.text, "html.parser")
