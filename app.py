@@ -1,15 +1,13 @@
 from flask import Flask, request, jsonify
 from kbo_scraper import get_today_kbo_results
-import today_games
+from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
-
 
 app = Flask(__name__)
 
 @app.route("/today_results", methods=["POST"])
 def today_results():
     result_text = get_today_kbo_results()
-
     return jsonify({
         "version": "2.0",
         "template": {
@@ -39,7 +37,7 @@ def show_today_games():
 
 @app.route("/weather_today", methods=["POST"])
 def show_weather_today():
-    message = build_weather_message()  # 오늘 날씨 안내 메시지 생성
+    message = build_weather_message()
     return jsonify({
         "version": "2.0",
         "template": {
@@ -50,7 +48,6 @@ def show_weather_today():
             }]
         }
     })
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
