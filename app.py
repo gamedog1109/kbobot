@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from kbo_scraper import get_today_kbo_results
-import tomorrow_games
+import today_games
 from kbo_weather_checker import build_weather_message
 
 
