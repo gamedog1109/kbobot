@@ -11,13 +11,13 @@ def get_tomorrow_game_info():
         with open("fans.json", "r", encoding="utf-8") as f:
             fans = json.load(f)
 
-        tomorrow = datetime.today().date() + timedelta(days=1)
+        tomorrow = datetime.today().date() + timedelta(days=0)
         df_tomorrow = df[df["date"] == tomorrow]
 
         if df_tomorrow.empty:
-            return f"📅 내일({tomorrow})은 예정된 경기가 없습니다."
+            return f"📅 오늘({tomorrow})은 예정된 경기가 없습니다."
 
-        result = [f"📅 내일({tomorrow}) KBO 경기 일정\n"]
+        result = [f"📅 오늘({tomorrow}) KBO 경기 일정\n"]
         for _, row in df_tomorrow.iterrows():
             home, away, stadium = row["home_team"], row["away_team"], row["stadium"]
             home_fans = [n for n, t in fans.items() if t == home]
