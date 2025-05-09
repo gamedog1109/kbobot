@@ -27,6 +27,6 @@ def get_today_kbo_results():
             count += 1
 
     if count == 0:
-        result += "오늘은 KBO 경기가 없습니다."
+        result += "아직은 KBO 경기를 시작하지 않았습니다. 아마도요??"
 
     return result.strip()
