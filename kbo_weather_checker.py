@@ -35,10 +35,10 @@ def get_weather(lat, lon, stadium_name):
 
     for forecast in forecasts:
         forecast_time = datetime.utcfromtimestamp(forecast["dt"]) + timedelta(hours=9)
-        if forecast_time.date() == today and 13 <= forecast_time.hour <= 19:
+        if forecast_time.date() == today and 14 <= forecast_time.hour <= 19:
             desc = forecast["weather"][0]["description"]
             descriptions.add(desc)
-            if "비" in desc
+            if "비" in desc:
                 rain_possible = True
 
     if not descriptions:
