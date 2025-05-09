@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from kbo_scraper import get_today_kbo_results
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
@@ -7,20 +6,6 @@ from next_series import get_next_series_info
 
 
 app = Flask(__name__)
-
-@app.route("/today_results", methods=["POST"])
-def today_results():
-    result_text = get_today_kbo_results()
-    return jsonify({
-        "version": "2.0",
-        "template": {
-            "outputs": [{
-                "simpleText": {
-                    "text": result_text
-                }
-            }]
-        }
-    })
 
 @app.route('/')
 def index():
@@ -51,8 +36,6 @@ def show_weather_today():
             }]
         }
     })
-
-from next_series import get_next_series_info
 
 @app.route("/next_series", methods=["POST"])
 def show_next_series():
