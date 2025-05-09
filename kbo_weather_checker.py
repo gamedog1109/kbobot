@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta  # ✅ 수정된 부분
 
 # API 키 (네 키)
 API_KEY = "9fd6e52a7c66dd82574f4f87cc79e17b"
@@ -39,8 +39,8 @@ def get_weather(lat, lon, stadium_name):
 
 # 오늘 경기 기준 메시지 만들기
 def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
-   today = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d")
-    
+    today = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d")  # ✅ 수정 완료
+
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
@@ -62,7 +62,7 @@ def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
     
     # 메시지 포맷팅
     output = [f"📅 오늘({today}) KBO 구장 날씨 안내 🌤", ""]
-    
+
     for g in games:
         weather_result = get_weather(g["lat"], g["lon"], g["stadium"])
         block = (

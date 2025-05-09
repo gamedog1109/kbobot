@@ -25,14 +25,21 @@ def today_results():
 def index():
     return 'KBO 챗봇 서버가 실행 중입니다!'
 
-@app.route('/tomorrow_games', methods=['POST'])
-def get_tomorrow_games():
-    result = tomorrow_games.get_tomorrow_game_info()
-    return jsonify({"version": "2.0", "template": {"outputs": [{"simpleText": {"text": result}}]}})
+@app.route("/games_today", methods=["POST"])
+def show_today_games():
+    message = get_today_game_info()
+    return jsonify({
+        "version": "2.0",
+        "template": {
+            "outputs": [{
+                "simpleText": {"text": message}
+            }]
+        }
+    })
 
-@app.route("/weather", methods=["POST"])
-def handle_weather():
-    message = build_weather_message()
+@app.route("/weather_today", methods=["POST"])
+def show_weather_today():
+    message = build_weather_message()  # 오늘 날씨 안내 메시지 생성
     return jsonify({
         "version": "2.0",
         "template": {
@@ -43,9 +50,6 @@ def handle_weather():
             }]
         }
     })
-
-
-
 
 
 if __name__ == "__main__":
