@@ -1,8 +1,8 @@
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
-# API 키 (네 키로 바꿔줘)
+# API 키 (네 키)
 API_KEY = "9fd6e52a7c66dd82574f4f87cc79e17b"
 
 # 구장 좌표
@@ -21,7 +21,7 @@ stadium_coords = {
 # 날씨 텍스트 받아오는 함수
 def get_weather(lat, lon, stadium_name):
     if stadium_name == "고척":
-        return "🌟 돔구장 (우천 취소 없음)"
+        return "🌟 허구연의 돔구장 (우천 취소 없음)"
     
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&lang=kr&units=metric"
     res = requests.get(url)
@@ -37,9 +37,9 @@ def get_weather(lat, lon, stadium_name):
     else:
         return f"{weather} ☁️ (우천 가능성 낮음)"
 
-# 내일 경기 기준 메시지 만들기
+# 오늘 경기 기준 메시지 만들기
 def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
-    tomorrow = (datetime.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+    today = datetime.today().strftime("%Y-%m-%d")
     
     try:
         df = pd.read_csv(csv_path)
@@ -47,7 +47,7 @@ def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
         return f"[오류] 일정 파일을 불러올 수 없습니다:\n{e}"
     
     games = []
-    for _, row in df[df["date"] == tomorrow].iterrows():
+    for _, row in df[df["date"] == today].iterrows():
         stadium = row["stadium"]
         if stadium in stadium_coords:
             games.append({
@@ -58,10 +58,10 @@ def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
             })
     
     if not games:
-        return f"📅 내일({tomorrow}) 예정된 경기가 없습니다."
+        return f"📅 오늘({today}) 예정된 경기가 없습니다."
     
     # 메시지 포맷팅
-    output = [f"📅 내일({tomorrow}) KBO 우천 가능성 예보 ⚾️", ""]
+    output = [f"📅 오늘({today}) KBO 구장 날씨 안내 🌤", ""]
     
     for g in games:
         weather_result = get_weather(g["lat"], g["lon"], g["stadium"])
