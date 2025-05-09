@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from kbo_scraper import get_today_kbo_results
 import tomorrow_games
+from kbo_weather_checker import build_weather_message
+
 
 app = Flask(__name__)
 
@@ -27,6 +29,20 @@ def index():
 def get_tomorrow_games():
     result = tomorrow_games.get_tomorrow_game_info()
     return jsonify({"version": "2.0", "template": {"outputs": [{"simpleText": {"text": result}}]}})
+
+@app.route("/weather", methods=["POST"])
+def handle_weather():
+    message = build_weather_message()
+    return jsonify({
+        "version": "2.0",
+        "template": {
+            "outputs": [{
+                "simpleText": {
+                    "text": message
+                }
+            }]
+        }
+    })
 
 
 
