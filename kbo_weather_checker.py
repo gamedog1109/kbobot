@@ -58,10 +58,10 @@ def build_weather_message(csv_path="KBO_2025_May_to_August.csv"):
             })
     
     if not games:
-        return f"📅 {tomorrow} 예정된 경기가 없습니다."
+        return f"📅 내일({tomorrow}) 예정된 경기가 없습니다."
     
     # 메시지 포맷팅
-    output = [f"📅 {tomorrow} KBO 우천 가능성 예보 ⚾️", ""]
+    output = [f"📅 내일({tomorrow}) KBO 우천 가능성 예보 ⚾️", ""]
     
     for g in games:
         weather_result = get_weather(g["lat"], g["lon"], g["stadium"])
