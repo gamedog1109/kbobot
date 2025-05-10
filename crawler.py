@@ -1,7 +1,13 @@
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
+
+# UTC 시간을 KST로 변환하는 함수
+def convert_utc_to_kst(utc_time):
+    kst_time = utc_time + timedelta(hours=9)  # UTC에서 9시간 더하여 KST로 변환
+    return kst_time
 
 def crawl_kbo_games():
     with sync_playwright() as p:
@@ -37,10 +43,14 @@ def crawl_kbo_games():
         line = f"{away_name} {away_score} : {home_score} {home_name} - 상태: {game_status}"
         result.append(line)
 
+    # UTC 시간 가져오기
+    utc_time = datetime.now(pytz.utc)  # UTC 시간
+    kst_time = convert_utc_to_kst(utc_time)  # KST로 변환
+
     # JSON 파일로 저장
     output = {
         "games": result,
-        "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "last_updated": kst_time.strftime("%Y-%m-%d %H:%M:%S")  # KST 시간 출력
     }
 
     with open("today_games.json", "w", encoding="utf-8") as f:
