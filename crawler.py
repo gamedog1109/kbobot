@@ -5,7 +5,7 @@ import os
 
 def get_live_scores():
     try:
-        # fans.json 불러오기
+        # 팬 데이터 로드
         fan_data = {}
         if os.path.exists("fans.json"):
             with open("fans.json", "r", encoding="utf-8") as f:
@@ -15,12 +15,17 @@ def get_live_scores():
         for fan, team in fan_data.items():
             team_to_fans.setdefault(team, []).append(fan)
 
-        # Playwright로 페이지 렌더링
+        # Playwright 실행
         with sync_playwright() as p:
-            browser = p.chromium.launch()
+            browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             page.goto("https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx")
-            page.wait_for_timeout(5000)  # JS 렌더링 대기
+
+            try:
+                page.wait_for_selector("li.game-cont", timeout=10000)
+            except:
+                return "⏱️ 경기 정보 로딩에 실패했습니다. (10초 초과)"
+
             html = page.content()
             browser.close()
 
