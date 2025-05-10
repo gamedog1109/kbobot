@@ -1,9 +1,9 @@
-name: KBO Crawl Every 10min
+name: Daily KBO Crawl
 
 on:
   schedule:
     - cron: '*/10 * * * *'  # 매 10분마다 실행 (UTC 기준)
-  workflow_dispatch:
+  workflow_dispatch:        # 수동 실행도 가능
 
 jobs:
   run:
@@ -23,10 +23,10 @@ jobs:
         pip install -r requirements.txt
         python -m playwright install --with-deps
 
-    - name: Run crawler
+    - name: Run KBO crawler
       run: python crawler.py
 
-    - name: Commit and push result
+    - name: Commit and push JSON
       run: |
         git config user.name "GitHub Action"
         git config user.email "action@github.com"
