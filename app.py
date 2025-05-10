@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
-
+from fan_message import generate_fan_messages  # fan_message.py에서 함수 호출
 
 app = Flask(__name__)
 
@@ -74,6 +74,13 @@ def show_next_series():
             }]
         }
     })
+
+
+@app.route('/fan_messages', methods=['GET'])
+def fan_messages():
+    messages = generate_fan_messages()  # fan_message.py에서 팬 메시지 가져오기
+    return jsonify(messages)
+
 
 @app.route("/")
 def index():
