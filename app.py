@@ -20,7 +20,7 @@ def webhook():
 
 @app.route("/games_today", methods=["POST"])
 def games_today():
-    message = get_today_games()
+    message = get_today_games_info()
     return jsonify({
         "version": "2.0",
         "template": {
