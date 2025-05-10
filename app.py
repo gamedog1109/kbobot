@@ -1,67 +1,56 @@
 from flask import Flask, request, jsonify
-from today_games import get_today_game_info
-from kbo_weather_checker import build_weather_message
-from next_series import get_next_series_info
-from live_scores import get_live_scores
-
+from crawler import get_live_scores
+from today_games import get_today_games
+from next_series import get_next_series
+from kbo_weather_checker import get_weather_forecast
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return 'KBO 챗봇 서버가 실행 중입니다!'
-
-@app.route("/games_today", methods=["POST"])
-def show_today_games():
-    message = get_today_game_info()
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    result = get_live_scores()
     return jsonify({
         "version": "2.0",
         "template": {
             "outputs": [{
-                "simpleText": {"text": message}
+                "simpleText": {"text": result}
             }]
         }
     })
 
-@app.route("/weather_today", methods=["POST"])
-def show_weather_today():
-    message = build_weather_message()
+@app.route("/games_today", methods=["POST"])
+def games_today():
+    message = get_today_games()
     return jsonify({
         "version": "2.0",
         "template": {
-            "outputs": [{
-                "simpleText": {
-                    "text": message
-                }
-            }]
+            "outputs": [{"simpleText": {"text": message}}]
         }
     })
 
 @app.route("/next_series", methods=["POST"])
-def show_next_series():
-    message = get_next_series_info()
+def next_series():
+    message = get_next_series()
     return jsonify({
         "version": "2.0",
         "template": {
-            "outputs": [{
-                "simpleText": {"text": message}
-            }]
+            "outputs": [{"simpleText": {"text": message}}]
         }
     })
 
-
-@app.route("/live_scores", methods=["POST"])
-def show_live_scores():
-    message = get_live_scores()
+@app.route("/weather_today", methods=["POST"])
+def weather_today():
+    message = get_weather_forecast()
     return jsonify({
         "version": "2.0",
         "template": {
-            "outputs": [{
-                "simpleText": {"text": message}
-            }]
+            "outputs": [{"simpleText": {"text": message}}]
         }
     })
 
+@app.route("/")
+def index():
+    return "✅ KBO 챗봇 서버 정상 실행 중!"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)

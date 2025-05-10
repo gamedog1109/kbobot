@@ -1,10 +1,11 @@
-import requests
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import json
 import os
 
 def get_live_scores():
     try:
+        # fans.json 불러오기
         fan_data = {}
         if os.path.exists("fans.json"):
             with open("fans.json", "r", encoding="utf-8") as f:
@@ -14,11 +15,17 @@ def get_live_scores():
         for fan, team in fan_data.items():
             team_to_fans.setdefault(team, []).append(fan)
 
-        url = "https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx"
-        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        res.encoding = "utf-8"
-        soup = BeautifulSoup(res.text, "html.parser")
+        # Playwright로 페이지 렌더링
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.goto("https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx")
+            page.wait_for_timeout(5000)  # JS 렌더링 대기
+            html = page.content()
+            browser.close()
 
+        # BeautifulSoup으로 파싱
+        soup = BeautifulSoup(html, "html.parser")
         games = soup.select("li.game-cont")
         if not games:
             return "📡 현재 중계 중인 경기가 없습니다."
@@ -54,7 +61,8 @@ def get_live_scores():
                 else:
                     fans = team_to_fans.get(away_name, []) + team_to_fans.get(home_name, [])
                     if fans:
-                        cheer_msg = "\n" + ", ".join(f"{n}님" for n in fans) + " 두 팀 팬들 모두 조마조마하시겠어요 🤔"
+                        fan_str = ", ".join(f"{n}님" for n in fans)
+                        cheer_msg = f"\n{fan_str} 두 팀 팬들 모두 조마조마하시겠어요 🤔"
                     line = f"{away_name} {away_score} : {home_score} {home_name} - 상태: {game_status}{cheer_msg}"
                     result.append(line)
                     continue
