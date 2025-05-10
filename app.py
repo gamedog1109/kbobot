@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from crawler import get_live_scores
-from today_games import get_today_games
+from today_games import get_today_games_info
 from next_series import get_next_series
 from kbo_weather_checker import get_weather_forecast
 
