@@ -2,7 +2,7 @@ name: Daily KBO Crawl
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 매 10분마다 실행 (UTC 기준)
+    - cron: '*/20 * * * *'  # 매 10분마다 실행 (UTC 기준)
   workflow_dispatch:        # 수동 실행도 가능
 
 jobs:
@@ -34,10 +34,13 @@ jobs:
     - name: Run KBO crawler
       run: python crawler.py
 
+    - name: Pull changes from remote repository
+      run: git pull https://github.com/gamedog1109/kbobot.git main || true
+
     - name: Commit and push JSON
       run: |
         git config user.name "GitHub Action"
         git config user.email "action@github.com"
         git add today_games.json
         git commit -m "auto: update today_games.json"
-        git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+        git push https://github-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
