@@ -77,6 +77,10 @@ def show_next_series():
     })
 
 
+
+
+
+# fans.json과 today_games.json 파일을 로드
 def load_data():
     with open('fans.json', 'r', encoding='utf-8') as fans_file:
         fans_data = json.load(fans_file)
@@ -115,11 +119,14 @@ def generate_game_messages(games_data, fans_data):
     return messages
 
 # 게임 상태 메시지 반환 라우트
-@app.route("/game_updates", methods=["GET"])
+@app.route("/game_updates", methods=["POST"])
 def game_updates():
     fans_data, games_data = load_data()
     messages = generate_game_messages(games_data, fans_data)
     return jsonify({"messages": messages})
+
+
+
 
 
 
