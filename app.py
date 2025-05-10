@@ -77,34 +77,61 @@ def show_next_series():
     })
 
 
-@app.route('/send_kbo_results', methods=['GET'])
-def send_kbo_results():
-    # JSON 파일 읽기
-    with open('today_games.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
+def load_data():
+    with open('fans.json', 'r', encoding='utf-8') as fans_file:
+        fans_data = json.load(fans_file)
 
-    # 경기 결과를 카카오 챗봇 형식에 맞게 변환
-    results = data["games"]
-    last_updated = data["last_updated"]
+    with open('today_games.json', 'r', encoding='utf-8') as games_file:
+        games_data = json.load(games_file)
+    
+    return fans_data, games_data
 
-    # 챗봇 메시지 템플릿에 맞게 포맷팅
-    message = f"📅 KBO 경기 결과\n\n"
-    message += "\n".join(results)
-    message += f"\n\n🕓 마지막 업데이트: {last_updated}"
+# 메시지 생성 함수
+def generate_game_messages(games_data, fans_data):
+    messages = []
+    
+    for game in games_data['games']:
+        # 정규 표현식을 이용해 경기 정보 추출
+        match = re.match(r'(\S+)\s(\d+)\s*:\s*(\d+)\s*(\S+)\s*-\s*(\S+)', game)
+        if match:
+            team1 = match.group(1)
+            score1 = match.group(2)
+            team2 = match.group(4)
+            score2 = match.group(3)
+            status = match.group(5)  # "상태" 값을 가져옵니다.
+        
+            # 경기 종료 상태 확인
+            if status == "경기종료":  # 경기가 종료된 경우
+                winner = team1 if int(score1) > int(score2) else team2
+                message = f"{team1} {score1} : {score2} {team2} - {winner} 경기 이겼습니다! 🎉"
+                # 승리한 팀을 응원하는 팬을 찾기
+                for fan, team in fans_data.items():
+                    if team == winner:
+                        messages.append(f"{fan}님, {message} - 경기 상태: 경기 종료\n")
+            else:  # 경기가 진행 중인 경우
+                leader = team1 if int(score1) > int(score2) else team2
+                messages.append(f"{team1} {score1} : {score2} {team2} - {leader}가 현재 이기고 있습니다! 💪 - 경기 상태: 진행 중\n")
+    
+    return messages
 
-    # 카카오 챗봇으로 보낼 준비
-    chatbot_message = {
-        "version": "2.0",
-        "template": {
-            "outputs": [
-                {
-                    "simpleText": {
-                        "text": message
-                    }
-                }
-            ]
-        }
-    }
+# 게임 상태 메시지 반환 라우트
+@app.route("/game_updates", methods=["GET"])
+def game_updates():
+    fans_data, games_data = load_data()
+    messages = generate_game_messages(games_data, fans_data)
+    return jsonify({"messages": messages})
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route("/")
