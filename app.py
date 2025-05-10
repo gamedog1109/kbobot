@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
-
+from live_scores import get_live_scores
 
 
 app = Flask(__name__)
@@ -40,6 +40,19 @@ def show_weather_today():
 @app.route("/next_series", methods=["POST"])
 def show_next_series():
     message = get_next_series_info()
+    return jsonify({
+        "version": "2.0",
+        "template": {
+            "outputs": [{
+                "simpleText": {"text": message}
+            }]
+        }
+    })
+
+
+@app.route("/live_scores", methods=["POST"])
+def show_live_scores():
+    message = get_live_scores()
     return jsonify({
         "version": "2.0",
         "template": {
