@@ -2,19 +2,37 @@ from flask import Flask, request, jsonify
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
-from crawler import get_live_scores
 
 
 app = Flask(__name__)
 
+# GitHub Pages에 JSON 파일이 업로드된 주소로 바꿔주세요
+JSON_URL = "https://github.com/gamedog1109/kbobot/today_games.json"
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    result = get_live_scores()
+    try:
+        res = requests.get(JSON_URL, timeout=5)
+        data = res.json()
+        games = data.get("games", [])
+        last_updated = data.get("last_updated", "")
+
+        if not games:
+            message = "⚠️ 현재 중계 중인 경기가 없습니다."
+        else:
+            message = "\n\n".join(games) + f"\n\n🕒 마지막 업데이트: {last_updated}"
+
+    except Exception as e:
+        message = "❌ 경기 정보를 불러오는 중 오류가 발생했습니다."
+
     return jsonify({
         "version": "2.0",
         "template": {
             "outputs": [{
-                "simpleText": {"text": result}
+                "simpleText": {
+                    "text": message
+                }
             }]
         }
     })
