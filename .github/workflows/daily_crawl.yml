@@ -34,13 +34,10 @@ jobs:
     - name: Run KBO crawler
       run: python crawler.py
 
-    - name: Pull changes from remote repository
-      run: git pull https://github.com/gamedog1109/kbobot.git main || true
-
-    - name: Commit and push JSON
+    - name: Force push to remote repository
       run: |
         git config user.name "GitHub Action"
         git config user.email "action@github.com"
         git add today_games.json
         git commit -m "auto: update today_games.json"
-        git push https://github-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+        git push --force https://github-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:main
