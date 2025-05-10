@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from crawler import get_live_scores
-from today_games import get_today_games_info
+from today_games import get_today_game_info
 from next_series import get_next_series
 from kbo_weather_checker import get_weather_forecast
 
@@ -20,7 +20,7 @@ def webhook():
 
 @app.route("/games_today", methods=["POST"])
 def games_today():
-    message = get_today_games_info()
+    message = get_today_game_info()
     return jsonify({
         "version": "2.0",
         "template": {
