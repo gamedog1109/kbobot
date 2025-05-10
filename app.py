@@ -1,8 +1,9 @@
+import json
 from flask import Flask, request, jsonify
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
-from fan_message import generate_fan_messages  # fan_message.py에서 함수 호출
+
 
 app = Flask(__name__)
 
@@ -76,10 +77,34 @@ def show_next_series():
     })
 
 
-@app.route('/fan_messages', methods=['GET'])
-def fan_messages():
-    messages = generate_fan_messages()  # fan_message.py에서 팬 메시지 가져오기
-    return jsonify(messages)
+@app.route('/send_kbo_results', methods=['GET'])
+def send_kbo_results():
+    # JSON 파일 읽기
+    with open('today_games.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    # 경기 결과를 카카오 챗봇 형식에 맞게 변환
+    results = data["games"]
+    last_updated = data["last_updated"]
+
+    # 챗봇 메시지 템플릿에 맞게 포맷팅
+    message = f"📅 KBO 경기 결과\n\n"
+    message += "\n".join(results)
+    message += f"\n\n🕓 마지막 업데이트: {last_updated}"
+
+    # 카카오 챗봇으로 보낼 준비
+    chatbot_message = {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": message
+                    }
+                }
+            ]
+        }
+    }
 
 
 @app.route("/")
