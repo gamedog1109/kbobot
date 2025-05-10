@@ -1,11 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import os
 
 def get_live_scores():
     try:
-        with open("fans.json", "r", encoding="utf-8") as f:
-            fan_data = json.load(f)  # { "뉴비": "LG", "제이": "한화" }
+        fan_data = {}
+        if os.path.exists("fans.json"):
+            with open("fans.json", "r", encoding="utf-8") as f:
+                fan_data = json.load(f)
 
         team_to_fans = {}
         for fan, team in fan_data.items():
@@ -33,43 +36,38 @@ def get_live_scores():
 
             away_name = away.get("alt", "원정")
             home_name = home.get("alt", "홈")
-            away_score = int(score_away.text.strip())
-            home_score = int(score_home.text.strip())
+
+            try:
+                away_score = int(score_away.text.strip())
+                home_score = int(score_home.text.strip())
+            except ValueError:
+                away_score = home_score = None
+
             game_status = status.text.strip()
-
             cheer_msg = ""
-            if away_score > home_score:
-                win_team = away_name
-                lose_team = home_name
-                if win_team in team_to_fans:
-                    fans = ", ".join(f"{n}님" for n in team_to_fans[win_team])
-                    cheer_msg += f" ({fans} 기분 좋으시겠어요 😊)"
-                if lose_team in team_to_fans:
-                    fans = ", ".join(f"{n}님" for n in team_to_fans[lose_team])
-                    cheer_msg += f"\n{fans} 힘내세요... 🥲"
-            elif home_score > away_score:
-                win_team = home_name
-                lose_team = away_name
-                if win_team in team_to_fans:
-                    fans = ", ".join(f"{n}님" for n in team_to_fans[win_team])
-                    cheer_msg += f" ({fans} 기분 좋으시겠어요 😊)"
-                if lose_team in team_to_fans:
-                    fans = ", ".join(f"{n}님" for n in team_to_fans[lose_team])
-                    cheer_msg += f"\n{fans} 힘내세요... 🥲"
-            else:  # 동점
-                fans = []
-                if away_name in team_to_fans:
-                    fans.extend(team_to_fans[away_name])
-                if home_name in team_to_fans:
-                    fans.extend(team_to_fans[home_name])
-                if fans:
-                    fan_str = ", ".join(f"{n}님" for n in fans)
-                    cheer_msg = f"\n{fan_str} 두 팀 팬들 모두 조마조마하시겠어요 🤔"
 
-            line = f"{away_name} {away_score} : {home_score} {home_name} - 상태: {game_status}{cheer_msg}"
+            if away_score is not None and home_score is not None:
+                if away_score > home_score:
+                    win_team, lose_team = away_name, home_name
+                elif home_score > away_score:
+                    win_team, lose_team = home_name, away_name
+                else:
+                    fans = team_to_fans.get(away_name, []) + team_to_fans.get(home_name, [])
+                    if fans:
+                        cheer_msg = "\n" + ", ".join(f"{n}님" for n in fans) + " 두 팀 팬들 모두 조마조마하시겠어요 🤔"
+                    line = f"{away_name} {away_score} : {home_score} {home_name} - 상태: {game_status}{cheer_msg}"
+                    result.append(line)
+                    continue
+
+                if win_team in team_to_fans:
+                    cheer_msg += f" ({', '.join(f'{n}님' for n in team_to_fans[win_team])} 기분 좋으시겠어요 😊)"
+                if lose_team in team_to_fans:
+                    cheer_msg += f"\n{', '.join(f'{n}님' for n in team_to_fans[lose_team])} 힘내세요... 🥲"
+
+            line = f"{away_name} {score_away.text.strip()} : {score_home.text.strip()} {home_name} - 상태: {game_status}{cheer_msg}"
             result.append(line)
 
-        return "\n\n".join(result)  # 경기당 줄바꿈
+        return "\n\n".join(result)
 
     except Exception as e:
-        return f"❌ 실시간 점수 가져오기 실패: {str(e)}"
+        return f"❌ 경기 정보 처리 중 오류 발생: {str(e)}"
