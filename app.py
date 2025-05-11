@@ -181,7 +181,7 @@ def fan_message():
                                 else:
                                     messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다!\n{team1} 승리했습니다. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
                             else:
-                                messages.append(f"⚖️ {team1}와 {team2}가 비겼습니다. ({score_line})")
+                                messages.append(f"⚖️ {team1}와 {team2}가 비겼습니다. ({score_line})\n")
 
                     # 어제 경기 결과
                     elif date == yesterday_str:
