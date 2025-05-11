@@ -1,97 +1,68 @@
-@app.route("/fan_message", methods=["POST"])
-def fan_message():
-    try:
-        with open('fans.json', 'r', encoding='utf-8') as f:
-            fan_data = json.load(f)
-        with open('today_games.json', 'r', encoding='utf-8') as f:
-            game_data = json.load(f)
+import json
+import re
+import pandas as pd
+from collections import defaultdict
 
-        games_by_date = game_data.get("games", {})
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        yesterday_str = sorted(games_by_date.keys())[-2] if today_str in games_by_date else sorted(games_by_date.keys())[-1]
-        fan_team_map = {v: k for k, v in fan_data.items()}
+# JSON 불러오기
+with open("series_games.json", "r", encoding="utf-8") as f:
+    game_data = json.load(f)
 
-        messages = []
+with open("fans.json", "r", encoding="utf-8") as f:
+    fans = json.load(f)
 
-        for date, games in games_by_date.items():
-            for game in games:
-                try:
-                    parts, status_raw = game.split(" - ")
-                    status = status_raw.strip().replace("상태:", "").strip()
-                    team_match = re.match(r"(.*) (\d+|vs) : (\d+|vs) (.*)", parts)
+# 팀별 승패 정리
+pattern = re.compile(r"(.+?)\s(\d+)\s:\s(\d+)\s(.+)")
+team_records = defaultdict(lambda: {'wins': 0, 'losses': 0})
 
-                    if not team_match:
-                        continue  # 잘못된 형식
+for date, games in game_data['games'].items():
+    for game in games:
+        try:
+            game_part, status_part = game.split(" - ")
+            status = status_part.strip().replace("상태:", "").strip()
+        except ValueError:
+            continue
+        if status != "경기종료":
+            continue
+        match = pattern.match(game_part)
+        if not match:
+            continue
+        team1, score1, score2, team2 = match.groups()
+        score1, score2 = int(score1), int(score2)
+        team_records[team1]
+        team_records[team2]
+        if score1 > score2:
+            team_records[team1]['wins'] += 1
+            team_records[team2]['losses'] += 1
+        elif score2 > score1:
+            team_records[team2]['wins'] += 1
+            team_records[team1]['losses'] += 1
 
-                    team1, score1_raw, score2_raw, team2 = team_match.groups()
-                    team1_is_fan = team1 in fan_team_map
-                    team2_is_fan = team2 in fan_team_map
-                    score_line = f"{team1} {score1_raw} : {score2_raw} {team2}"
+# 데이터프레임 생성 및 remark 추가
+df = pd.DataFrame.from_dict(team_records, orient="index")
+df.index.name = "team"
+df = df.reset_index()
+df['remark'] = df['wins'].apply(lambda w: '스윕 🎉' if w == 3 else ('위닝 👍' if w == 2 else ''))
 
-                    if score1_raw == "vs" or score2_raw == "vs":
-                        # 경기 취소 또는 미진행
-                        if team1_is_fan:
-                            messages.append(f"☁️ {fan_team_map[team1]}님, {team1} 경기 진행되지 않았습니다. ({status})")
-                        if team2_is_fan:
-                            messages.append(f"☁️ {fan_team_map[team2]}님, {team2} 경기 진행되지 않았습니다. ({status})")
-                        continue
+# 팬별 안내 메시지 구성
+messages = []
+for name, team in fans.items():
+    row = df[df['team'] == team]
+    if row.empty:
+        msg = f"[{name}] {team} | 경기 없음"
+    else:
+        wins = row.iloc[0]['wins']
+        losses = row.iloc[0]['losses']
+        remark = row.iloc[0]['remark']
+        if remark == '스윕 🎉':
+            donation = 10000
+        elif remark == '위닝 👍':
+            donation = 5000
+        else:
+            donation = 0
+        msg = f"[{name}] {team} {wins}승 {losses}패 | {remark or '노 위닝'} | 찬조금 {donation:,}원"
+    messages.append(msg)
 
-                    score1, score2 = int(score1_raw), int(score2_raw)
-
-                    if date == yesterday_str:
-                        if team1_is_fan and team2_is_fan:
-                            if score1 > score2:
-                                messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다! {team1}이 {team2}에게 승리했습니다. ({score_line})")
-                            elif score2 > score1:
-                                messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다! {team2}이 {team1}에게 승리했습니다. ({score_line})")
-                            else:
-                                messages.append(f"⚖️ {fan_team_map[team1]}님과 {fan_team_map[team2]}님, {team1}과 {team2}가 비겼습니다. ({score_line})")
-                        elif team1_is_fan or team2_is_fan:
-                            team = team1 if team1_is_fan else team2
-                            opp = team2 if team1_is_fan else team1
-                            fan_name = fan_team_map[team]
-                            team_score = score1 if team1_is_fan else score2
-                            opp_score = score2 if team1_is_fan else score1
-                            if team_score > opp_score:
-                                messages.append(f"🎉 {fan_name}님 축하합니다! {team}이 {opp}에게 승리했습니다. ({score_line})")
-                            elif team_score < opp_score:
-                                messages.append(f"😢 {fan_name}님 아쉽습니다. {team}이 {opp}에게 패배했습니다. ({score_line})")
-                            else:
-                                messages.append(f"⚖️ {fan_name}님, {team}이 {opp}와 비겼습니다. ({score_line})")
-
-                    elif date == today_str:
-                        if "예정" in status:
-                            if team1_is_fan:
-                                messages.append(f"📅 {fan_team_map[team1]}님, {team1} 경기는 아직 시작되지 않았습니다.")
-                            if team2_is_fan:
-                                messages.append(f"📅 {fan_team_map[team2]}님, {team2} 경기는 아직 시작되지 않았습니다.")
-                        elif "회" in status:
-                            inning = status
-                            if team1_is_fan:
-                                messages.append(f"🔥 {fan_team_map[team1]}님, {team1}이 {team2}와 {inning} 경기 중입니다. ({score_line})")
-                            if team2_is_fan:
-                                messages.append(f"🔥 {fan_team_map[team2]}님, {team2}이 {team1}와 {inning} 경기 중입니다. ({score_line})")
-
-                except:
-                    continue
-
-        result_text = "\n".join(messages)
-
-        return jsonify({
-            "version": "2.0",
-            "template": {
-                "outputs": [{
-                    "simpleText": {"text": result_text}
-                }]
-            }
-        })
-
-    except Exception as e:
-        return jsonify({
-            "version": "2.0",
-            "template": {
-                "outputs": [{
-                    "simpleText": {"text": f"❌ 오류 발생: {str(e)}"}
-                }]
-            }
-        })
+# 출력
+print("\n📢 이번 시리즈 찬조금 납부:\n")
+for m in messages:
+    print(m)

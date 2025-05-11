@@ -1,20 +1,19 @@
 import logging
+import os
 import json
-import requests
+import re
+import pandas as pd
+from datetime import datetime
+from collections import defaultdict
 
+import requests
 from flask import Flask, request, jsonify
+
+# 프로젝트 내 모듈
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
-import re
-from flask import Flask, jsonify
-import os
-from datetime import datetime 
-from collections import defaultdict
-
-from collections import defaultdict
-from winning_sweep import check_winning_series_and_sweep  # winning_sweep.py를 import
-
+from winning_sweep import check_winning_series_and_sweep
 
 
 app = Flask(__name__)
@@ -236,75 +235,87 @@ def fan_message():
 
 
 
-# 파일 불러오기
-with open('fans.json', 'r', encoding='utf-8') as f:
-    fans_data = json.load(f)
+# ✅ 데이터 로딩
+with open("series_games.json", "r", encoding="utf-8") as f:
+    game_data = json.load(f)
 
-with open('series_games.json', 'r', encoding='utf-8') as f:
-    series_games = json.load(f)
+with open("fans.json", "r", encoding="utf-8") as f:
+    fans = json.load(f)
 
-# 팬과 팀 매핑
-fan_team_map = {v: k for k, v in fans_data.items()}
+# ✅ 팀별 승패 집계 함수
+def get_team_records():
+    pattern = re.compile(r"(.+?)\s(\d+)\s:\s(\d+)\s(.+)")
+    records = defaultdict(lambda: {'wins': 0, 'losses': 0})
 
-# 찬조금 부과할 팀 결정
-def determine_winning_series_and_sweep():
-    game_results = series_games['games']
-    results = {}
-
-    for date, games in game_results.items():
-        winning_teams = []
-        losing_teams = []
-
+    for date, games in game_data['games'].items():
         for game in games:
-            teams = game.split(' - ')[0].split(' vs ')
-            score = game.split(' - ')[1].split(' ')[0]
-            status = game.split(' - ')[1].split(' ')[1]
-            
-            if status == "경기종료":
-                team1, team2 = teams
-                score1, score2 = map(int, score.split(' : '))
-                if score1 > score2:
-                    winning_teams.append(team1)
-                    losing_teams.append(team2)
-                else:
-                    winning_teams.append(team2)
-                    losing_teams.append(team1)
+            try:
+                game_part, status_part = game.split(" - ")
+                status = status_part.strip().replace("상태:", "").strip()
+            except ValueError:
+                continue
+            if status != "경기종료":
+                continue
+            match = pattern.match(game_part)
+            if not match:
+                continue
+            team1, score1, score2, team2 = match.groups()
+            score1, score2 = int(score1), int(score2)
+            records[team1]
+            records[team2]
+            if score1 > score2:
+                records[team1]['wins'] += 1
+                records[team2]['losses'] += 1
+            elif score2 > score1:
+                records[team2]['wins'] += 1
+                records[team1]['losses'] += 1
 
-        if winning_teams:
-            winning_team = max(set(winning_teams), key=winning_teams.count)
-            if winning_teams.count(winning_team) >= 2:  # 위닝 시리즈
-                results[winning_team] = "위닝 시리즈"
-            if winning_teams.count(winning_team) == 3:  # 스윕
-                results[winning_team] = "스윕"
+    return records
 
-    return results
+# ✅ 팬별 메시지 생성 함수
+def generate_messages():
+    records = get_team_records()
+    df = pd.DataFrame.from_dict(records, orient="index")
+    df.index.name = "team"
+    df = df.reset_index()
+    df['remark'] = df['wins'].apply(lambda w: '스윕 🎉' if w == 3 else ('위닝 👍' if w == 2 else ''))
 
-# 팬에게 찬조금 부과하는 API 엔드포인트
-@app.route('/fan_contribution', methods=['GET', 'POST'])
-def fan_contribution():
-    results = determine_winning_series_and_sweep()
     messages = []
+    for name, team in fans.items():
+        row = df[df['team'] == team]
+        if row.empty:
+            msg = f"[{name}] {team} | 경기 없음"
+        else:
+            wins = row.iloc[0]['wins']
+            losses = row.iloc[0]['losses']
+            remark = row.iloc[0]['remark']
+            if remark == '스윕 🎉':
+                donation = 10000
+            elif remark == '위닝 👍':
+                donation = 5000
+            else:
+                donation = 0
+            msg = f"[{name}] {team} {wins}승 {losses}패 | {remark or '노 위닝'} | 찬조금 {donation:,}원"
+        messages.append(msg)
 
-    # 찬조금을 부과할 팬들
-    for team, result in results.items():
-        fans_of_team = [fan for fan, fan_team in fan_team_map.items() if fan_team == team]
-        for fan in fans_of_team:
-            messages.append(f"{fan}님은 {team}팀이 {result}을 했기 때문에 찬조금을 부과합니다.")
+    return messages
 
-    # 결과 텍스트로 결합
-    result_text = "\n".join(messages).strip()
-
-    # 템플릿 형식으로 반환
+# ✅ 카카오톡 챗봇 응답용 API
+@app.route("/donation_summary", methods=["POST"])
+def donation_summary():
+    messages = generate_messages()
     return jsonify({
         "version": "2.0",
         "template": {
             "outputs": [{
                 "simpleText": {
-                    "text": result_text
+                    "text": "📢 이번 시리즈 찬조금 납부\n\n" + "\n".join(messages)
                 }
             }]
         }
     })
+
+
 
 
 
