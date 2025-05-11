@@ -102,11 +102,12 @@ def fan_message():
         messages = [f"📡 [최근 경기 결과 안내]\n"]
         match_counter = defaultdict(int)
 
-        for date, games in games_by_date.items():
-            date_label = "🕘 어제 경기" if date == yesterday_str else "🟢 오늘 경기"
-            messages.append(f"{date_label} ({date})\n")
+        # 오늘 경기 먼저 안내
+        if today_str in games_by_date:
+            date_label = "🟢 오늘 경기"
+            messages.append(f"{date_label} ({today_str})\n")
 
-            for game in games:
+            for game in games_by_date[today_str]:
                 try:
                     parts, status_raw = game.split(" - ")
                     status = status_raw.strip().replace("상태:", "").strip()
@@ -117,13 +118,13 @@ def fan_message():
                     team1, score1_raw, score2_raw, team2 = team_match.groups()
 
                     # 경기 수 카운트용 키
-                    matchup_key = f"{date}_{team1}_{team2}"
+                    matchup_key = f"{today_str}_{team1}_{team2}"
                     match_counter[matchup_key] += 1
                     count = match_counter[matchup_key]
 
                     # 총 동일 경기 수 확인
                     total_matches = sum(
-                        1 for g in games
+                        1 for g in games_by_date[today_str]
                         if re.match(rf"{re.escape(team1)} (?:\d+|vs) : (?:\d+|vs) {re.escape(team2)}", g.split(" - ")[0])
                     )
 
@@ -137,7 +138,7 @@ def fan_message():
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}{dh_suffix}"
 
                     # 오늘 예정 경기
-                    if date == today_str and "예정" in status:
+                    if "예정" in status:
                         if team1_is_fan and team2_is_fan:
                             messages.append(f"⏳ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기 예정입니다.{dh_suffix}\n")
                         elif team1_is_fan:
@@ -160,34 +161,84 @@ def fan_message():
 
                     score1, score2 = int(score1_raw), int(score2_raw)
 
-                    # 어제 경기 결과
-                    if date == yesterday_str:
-                        if team1_is_fan and team2_is_fan:
-                            if score1 > score2:
-                                messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다!\n{team1} 승리했습니다. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
-                            elif score2 > score1:
-                                messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다!\n{team2} 승리했습니다. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
-                        elif team1_is_fan or team2_is_fan:
-                            team = team1 if team1_is_fan else team2
-                            opp = team2 if team1_is_fan else team1
-                            fan_name = fan_team_map[team]
-                            team_score = score1 if team1_is_fan else score2
-                            opp_score = score2 if team1_is_fan else score1
-                            if team_score > opp_score:
-                                messages.append(f"🎉 {fan_name}님 축하합니다!\n{team} 승리했습니다. 상대: {opp}{dh_suffix}\n📊 {score_line}\n")
-                            elif team_score < opp_score:
-                                messages.append(f"😢 {fan_name}님 아쉽습니다.\n{team} 패배했습니다. 상대: {opp}{dh_suffix}\n📊 {score_line}\n")
-                        else:
-                            messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀{dh_suffix}\n📊 {score_line}\n")
-
                     # 오늘 실시간 경기
-                    elif date == today_str:
-                        if "회" in status:
-                            inning = status
+                    if "회" in status:
+                        inning = status
+                        if team1_is_fan:
+                            messages.append(f"🔥 {fan_team_map[team1]}님,\n{team1} 현재 {inning} 진행 중. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                        if team2_is_fan:
+                            messages.append(f"🔥 {fan_team_map[team2]}님,\n{team2} 현재 {inning} 진행 중. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
+
+                    # 경기 종료 후 결과 안내
+                    else:
+                        if score1 > score2:
                             if team1_is_fan:
-                                messages.append(f"🔥 {fan_team_map[team1]}님,\n{team1} 현재 {inning} 진행 중. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                                messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다!\n{team1} 승리했습니다. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                            else:
+                                messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다!\n{team2} 승리했습니다. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
+                        elif score1 < score2:
                             if team2_is_fan:
-                                messages.append(f"🔥 {fan_team_map[team2]}님,\n{team2} 현재 {inning} 진행 중. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
+                                messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다!\n{team2} 승리했습니다. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
+                            else:
+                                messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다!\n{team1} 승리했습니다. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                        else:
+                            messages.append(f"⚖️ {team1}와 {team2}가 비겼습니다. ({score_line})")
+
+                except:
+                    continue
+
+        # 어제 경기 결과 처리
+        if yesterday_str in games_by_date:
+            date_label = "🕘 어제 경기"
+            messages.append(f"{date_label} ({yesterday_str})\n")
+
+            for game in games_by_date[yesterday_str]:
+                try:
+                    parts, status_raw = game.split(" - ")
+                    status = status_raw.strip().replace("상태:", "").strip()
+                    team_match = re.match(r"(.*) (\d+|vs) : (\d+|vs) (.*)", parts)
+                    if not team_match:
+                        continue
+
+                    team1, score1_raw, score2_raw, team2 = team_match.groups()
+
+                    # 경기 수 카운트용 키
+                    matchup_key = f"{yesterday_str}_{team1}_{team2}"
+                    match_counter[matchup_key] += 1
+                    count = match_counter[matchup_key]
+
+                    # 총 동일 경기 수 확인
+                    total_matches = sum(
+                        1 for g in games_by_date[yesterday_str]
+                        if re.match(rf"{re.escape(team1)} (?:\d+|vs) : (?:\d+|vs) {re.escape(team2)}", g.split(" - ")[0])
+                    )
+
+                    if count > 2:
+                        continue  # DH2까지만 허용
+
+                    dh_suffix = f" (DH{count})" if total_matches >= 2 else ""
+
+                    team1_is_fan = team1 in fan_team_map
+                    team2_is_fan = team2 in fan_team_map
+                    score_line = f"{team1} {score1_raw} : {score2_raw} {team2}{dh_suffix}"
+
+                    if team1_is_fan and team2_is_fan:
+                        if score1 > score2:
+                            messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다!\n{team1} 승리했습니다. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                        elif score2 > score1:
+                            messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다!\n{team2} 승리했습니다. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
+                    elif team1_is_fan or team2_is_fan:
+                        team = team1 if team1_is_fan else team2
+                        opp = team2 if team1_is_fan else team1
+                        fan_name = fan_team_map[team]
+                        team_score = score1 if team1_is_fan else score2
+                        opp_score = score2 if team1_is_fan else score1
+                        if team_score > opp_score:
+                            messages.append(f"🎉 {fan_name}님 축하합니다!\n{team} 승리했습니다. 상대: {opp}{dh_suffix}\n📊 {score_line}\n")
+                        elif team_score < opp_score:
+                            messages.append(f"😢 {fan_name}님 아쉽습니다.\n{team} 패배했습니다. 상대: {opp}{dh_suffix}\n📊 {score_line}\n")
+                    else:
+                        messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀{dh_suffix}\n📊 {score_line}\n")
 
                 except:
                     continue
