@@ -279,7 +279,7 @@ def determine_winning_series_and_sweep():
     return results
 
 # 팬에게 찬조금 부과하는 API 엔드포인트
-@app.route('/fan_contribution', methods=['GET'])
+@app.route('/fan_contribution', methods=['GET', 'POST'])
 def fan_contribution():
     results = determine_winning_series_and_sweep()
     contributions = []
