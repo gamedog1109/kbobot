@@ -245,6 +245,10 @@ def send_fan_message():
 
         # 디버깅: game_data가 어떤 구조인지 확인
         print(f"game_data: {game_data}")
+        
+        # game_data가 문자열일 경우, 이를 파싱하여 딕셔너리로 변환
+        if isinstance(game_data, str):
+            game_data = json.loads(game_data)
 
         # games 데이터가 없거나 올바르지 않으면 빈 리스트를 반환하도록 처리
         if "games" not in game_data:
