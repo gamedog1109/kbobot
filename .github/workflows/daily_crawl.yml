@@ -2,14 +2,12 @@ name: Daily KBO Crawl
 
 on:
   schedule:
-    # KST 14:00 ~ 23:00 → 매 20분마다 today_games 크롤링
+    # 매일 KST 14:00~23:40, 20분 간격 → UTC 05:00~14:40
     - cron: '*/20 5-14 * * *'
-    
-    # KST 금요일 00:00 → UTC 목요일 15:00
+    # 금요일 00:00 → UTC 목요일 15:00
     - cron: '0 15 * * 4'
-    
-    # KST 월요일 00:00 → UTC 일요일 15:00
-    - cron: '0 15 * * 0'
+    # 월요일 00:00 → UTC 일요일 15:00
+    - cron: '0 15 * * 7'
 
   workflow_dispatch:
 
@@ -39,16 +37,24 @@ jobs:
         pip install -r requirements.txt
         python -m playwright install --with-deps
 
-    # 🎯 조건 분기 실행
-    - name: Run KBO crawler
+    - name: Run KBO crawler (conditional)
       run: |
-        if [[ "$(date -u +%u)" == "4" && "$(date -u +%H)" == "15" ]] || [[ "$(date -u +%u)" == "0" && "$(date -u +%H)" == "15" ]]; then
-          echo "Running crawler_3games.py"
+        echo "🕒 Current UTC Time: $(date -u)"
+        if [[ "$(date -u +%u)" == "4" && "$(date -u +%H)" == "15" ]] || [[ "$(date -u +%u)" == "7" && "$(date -u +%H)" == "15" ]]; then
+          echo "📘 Running crawler_3games.py"
           python crawler_3games.py
         else
-          echo "Running crawler.py"
+          echo "📗 Running crawler.py"
           python crawler.py
         fi
+
+    - name: Show changes before push
+      run: |
+        echo "📝 Changed files:"
+        git status
+        echo ""
+        echo "🔍 Diff preview:"
+        git diff || true
 
     - name: Force push to remote repository
       run: |
