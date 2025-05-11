@@ -102,7 +102,7 @@ def fan_message():
         messages = [f"📡 [최근 경기 결과 안내]\n"]
         match_counter = defaultdict(int)
 
-        # 오늘 경기를 먼저 안내하도록 순서 변경
+        # 오늘 경기 먼저 안내
         if today_str in games_by_date:
             date_label = "🟢 오늘 경기"
             messages.append(f"{date_label} ({today_str})\n")
@@ -248,6 +248,12 @@ def fan_message():
                 }]
             }
         })
+
+
+
+
+
+
 @app.route("/")
 def index():
     return "✅ KBO 챗봇 서버 정상 실행 중!"
