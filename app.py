@@ -11,6 +11,10 @@ import os
 from datetime import datetime 
 from collections import defaultdict
 
+from collections import defaultdict
+from winning_sweep import check_winning_series_and_sweep  # winning_sweep.py를 import
+
+
 
 app = Flask(__name__)
 
@@ -226,6 +230,54 @@ def fan_message():
                 }]
             }
         })
+
+
+
+
+@app.route("/send_fan_message", methods=["POST"])  # 함수 이름을 send_fan_message로 변경
+def send_fan_message():
+    try:
+        with open('fans.json', 'r', encoding='utf-8') as f:
+            fan_data = json.load(f)
+        with open('series_games.json', 'r', encoding='utf-8') as f:
+            game_data = json.load(f)
+
+        games_by_date = game_data.get("games", {})
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        yesterday_str = sorted(games_by_date.keys())[-2] if today_str in games_by_date else sorted(games_by_date.keys())[-1]
+        fan_team_map = {v: k for k, v in fan_data.items()}
+
+        messages = [f"📡 [최근 경기 결과 안내]\n"]
+        match_counter = defaultdict(int)
+
+        # 위닝 시리즈 및 스윕 결과 얻기
+        series_results = check_winning_series_and_sweep(games_by_date, fan_team_map)
+
+        # 위닝 시리즈 및 스윕 결과 추가
+        messages.extend(series_results)
+
+        result_text = "\n".join(messages).strip()
+
+        return jsonify({
+            "version": "2.0",
+            "template": {
+                "outputs": [{
+                    "simpleText": {"text": result_text}
+                }]
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            "version": "2.0",
+            "template": {
+                "outputs": [{
+                    "simpleText": {"text": f"❌ 오류 발생: {str(e)}"}
+                }]
+            }
+        })
+
+
 
 
 @app.route("/")
