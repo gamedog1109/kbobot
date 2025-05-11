@@ -117,10 +117,20 @@ def fan_message():
                     team2_is_fan = team2 in fan_team_map
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}"
 
-                    # 경기 미진행 또는 취소 처리
+                    # 예정 안내 (오늘)
+                    if date == today_str and "예정" in status:
+                        if team1_is_fan and team2_is_fan:
+                            messages.append(f"⏳ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기 예정입니다.\n")
+                        elif team1_is_fan:
+                            messages.append(f"⏳ {fan_team_map[team1]}님\n{team1} 경기 예정입니다.\n")
+                        elif team2_is_fan:
+                            messages.append(f"⏳ {fan_team_map[team2]}님\n{team2} 경기 예정입니다.\n")
+                        continue
+
+                    # 경기 미진행 또는 취소
                     if score1_raw == "vs" or score2_raw == "vs":
                         if "예정" in status:
-                            continue  # 예정 경기는 무시
+                            continue
                         if team1_is_fan:
                             messages.append(f"☁️ {fan_team_map[team1]}님,\n{team1} 경기 취소되었습니다.\n")
                         if team2_is_fan:
@@ -149,9 +159,7 @@ def fan_message():
                             messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀\n📊 {score_line}\n")
 
                     elif date == today_str:
-                        if "예정" in status:
-                            continue
-                        elif "회" in status:
+                        if "회" in status:
                             inning = status
                             if team1_is_fan:
                                 messages.append(f"🔥 {fan_team_map[team1]}님,\n{team1} 현재 {inning} 진행 중. 상대: {team2}\n📊 {score_line}\n")
@@ -181,7 +189,6 @@ def fan_message():
                 }]
             }
         })
-
 
 
 

@@ -42,7 +42,7 @@ def crawl_kbo_yesterday_today():
     yesterday = today - timedelta(days=1)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)  # 테스트 시 False
+        browser = p.chromium.launch(headless=True)  # ✅ headless 모드로 설정 (서버환경 대응)
         page = browser.new_page()
         page.goto("https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx")
 
