@@ -242,7 +242,7 @@ with open("series_games.json", "r", encoding="utf-8") as f:
 with open("fans.json", "r", encoding="utf-8") as f:
     fans = json.load(f)
 
-# ✅ 팀별 전체 승패 집계
+# ✅ 전체 승패 계산 함수
 def get_team_records():
     pattern = re.compile(r"(.+?)\s(\d+)\s:\s(\d+)\s(.+)")
     records = defaultdict(lambda: {'wins': 0, 'losses': 0})
@@ -270,7 +270,7 @@ def get_team_records():
 
     return records
 
-# ✅ 팬별 메시지 생성 함수
+# ✅ 팬별 찬조금 메시지 생성
 def generate_messages():
     records = get_team_records()
     df = pd.DataFrame.from_dict(records, orient="index")
@@ -280,7 +280,7 @@ def generate_messages():
     messages = []
     fan_teams = list(fans.values())
 
-    # 팬 팀 간 조합
+    # 팬들 간 맞대결 조합
     matchups = []
     for team1 in fan_teams:
         for team2 in fan_teams:
@@ -309,7 +309,7 @@ def generate_messages():
                 elif score2 > score1:
                     team2_wins += 1
 
-        # 결과 저장 (상대 포함)
+        # 결과 저장 (opponent 포함)
         if team1_wins == 3:
             result_by_team[team1] = {"remark": "스윕 🎉", "donation": 10000, "opponent": team2}
         elif team1_wins == 2:
@@ -336,7 +336,7 @@ def generate_messages():
 
     return messages
 
-# ✅ 카카오톡 챗봇 응답 API
+# ✅ API 엔드포인트: /donation_summary
 @app.route("/donation_summary", methods=["POST"])
 def donation_summary():
     messages = generate_messages()
