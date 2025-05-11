@@ -89,7 +89,7 @@ def fan_message():
     try:
         with open('fans.json', 'r', encoding='utf-8') as f:
             fan_data = json.load(f)
-        with open('today_games.json', 'r', encoding='utf-8') as f:
+        with open('today_games.json", 'r', encoding='utf-8') as f:
             game_data = json.load(f)
 
         games_by_date = game_data.get("games", {})
@@ -117,7 +117,7 @@ def fan_message():
                     team2_is_fan = team2 in fan_team_map
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}"
 
-                    # 예정 안내 (오늘)
+                    # 오늘 예정된 경기 안내
                     if date == today_str and "예정" in status:
                         if team1_is_fan and team2_is_fan:
                             messages.append(f"⏳ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기 예정입니다.\n")
@@ -131,14 +131,17 @@ def fan_message():
                     if score1_raw == "vs" or score2_raw == "vs":
                         if "예정" in status:
                             continue
-                        if team1_is_fan:
+                        if team1_is_fan and team2_is_fan:
+                            messages.append(f"☁️ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기가 취소되었습니다.\n")
+                        elif team1_is_fan:
                             messages.append(f"☁️ {fan_team_map[team1]}님,\n{team1} 경기 취소되었습니다.\n")
-                        if team2_is_fan:
+                        elif team2_is_fan:
                             messages.append(f"☁️ {fan_team_map[team2]}님,\n{team2} 경기 취소되었습니다.\n")
                         continue
 
                     score1, score2 = int(score1_raw), int(score2_raw)
 
+                    # 어제 경기 결과 처리
                     if date == yesterday_str:
                         if team1_is_fan and team2_is_fan:
                             if score1 > score2:
@@ -158,6 +161,7 @@ def fan_message():
                         else:
                             messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀\n📊 {score_line}\n")
 
+                    # 오늘 실시간 경기 상황
                     elif date == today_str:
                         if "회" in status:
                             inning = status
@@ -189,8 +193,6 @@ def fan_message():
                 }]
             }
         })
-
-
 
 
 
