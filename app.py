@@ -1,3 +1,4 @@
+import logging
 import json
 import requests
 
@@ -255,19 +256,11 @@ def determine_winning_series_and_sweep():
         losing_teams = []
 
         for game in games:
-            # 경기 상태가 '경기종료'인 경우에만 처리
-            if '상태: 경기종료' not in game:
-                continue
-
             teams = game.split(' - ')[0].split(' vs ')
             score = game.split(' - ')[1].split(' ')[0]
             status = game.split(' - ')[1].split(' ')[1]
-
-            # 상태가 '경기종료'일 때만 처리
+            
             if status == "경기종료":
-                if len(teams) < 2:
-                    continue  # teams가 두 팀이 아닌 경우 건너뛰기
-                
                 team1, team2 = teams
                 score1, score2 = map(int, score.split(' : '))
                 if score1 > score2:
@@ -285,20 +278,33 @@ def determine_winning_series_and_sweep():
                 results[winning_team] = "스윕"
 
     return results
+
 # 팬에게 찬조금 부과하는 API 엔드포인트
 @app.route('/fan_contribution', methods=['GET', 'POST'])
 def fan_contribution():
     results = determine_winning_series_and_sweep()
-    contributions = []
+    messages = []
 
     # 찬조금을 부과할 팬들
     for team, result in results.items():
         fans_of_team = [fan for fan, fan_team in fan_team_map.items() if fan_team == team]
         for fan in fans_of_team:
-            contributions.append(f"{fan}님은 {team}팀이 {result}을 했기 때문에 찬조금을 부과합니다.")
+            messages.append(f"{fan}님은 {team}팀이 {result}을 했기 때문에 찬조금을 부과합니다.")
 
-    return jsonify({"message": contributions})
+    # 결과 텍스트로 결합
+    result_text = "\n".join(messages).strip()
 
+    # 템플릿 형식으로 반환
+    return jsonify({
+        "version": "2.0",
+        "template": {
+            "outputs": [{
+                "simpleText": {
+                    "text": result_text
+                }
+            }]
+        }
+    })
 
 
 
