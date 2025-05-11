@@ -115,7 +115,8 @@ def fan_message():
                         continue
 
                     team1, score1_raw, score2_raw, team2 = team_match.groups()
-                    # 동일 날짜 동일 팀 기준 중복 처리
+
+                    # DH 구분용 카운터
                     matchup_key = f"{date}_{team1}_{team2}"
                     match_counter[matchup_key] += 1
                     count = match_counter[matchup_key]
@@ -123,7 +124,7 @@ def fan_message():
                     if count > 2:
                         continue  # DH2까지만 허용
 
-                    dh_suffix = " (DH2)" if count == 2 else ""
+                    dh_suffix = f" (DH{count})"
 
                     team1_is_fan = team1 in fan_team_map
                     team2_is_fan = team2 in fan_team_map
@@ -205,7 +206,6 @@ def fan_message():
                 }]
             }
         })
-
 
 
 @app.route("/")
