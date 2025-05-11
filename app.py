@@ -84,13 +84,6 @@ def show_next_series():
 
 
 
-from flask import Flask, request, jsonify
-import json
-import re
-from datetime import datetime
-
-app = Flask(__name__)
-
 @app.route("/fan_message", methods=["POST"])
 def fan_message():
     try:
@@ -124,7 +117,10 @@ def fan_message():
                     team2_is_fan = team2 in fan_team_map
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}"
 
+                    # 경기 미진행 또는 취소 처리
                     if score1_raw == "vs" or score2_raw == "vs":
+                        if "예정" in status:
+                            continue  # 예정 경기는 무시
                         if team1_is_fan:
                             messages.append(f"☁️ {fan_team_map[team1]}님,\n{team1} 경기 취소되었습니다.\n")
                         if team2_is_fan:
@@ -185,7 +181,6 @@ def fan_message():
                 }]
             }
         })
-
 
 
 
