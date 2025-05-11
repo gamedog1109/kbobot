@@ -147,10 +147,8 @@ def fan_message():
                             messages.append(f"⏳ {fan_team_map[team2]}님\n{team2} vs {team1} 경기 예정입니다.{dh_suffix}\n")
                         continue
 
-                    # 취소 경기
-                    if score1_raw == "vs" or score2_raw == "vs":
-                        if "예정" in status:
-                            continue
+                    # 경기 취소
+                    if "취소" in status:  # 상태에 "취소"가 포함된 경우
                         if team1_is_fan and team2_is_fan:
                             messages.append(f"☁️ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기가 취소되었습니다.{dh_suffix}\n")
                         elif team1_is_fan:
@@ -184,8 +182,9 @@ def fan_message():
                     parts, status_raw = game.split(" - ")
                     status = status_raw.strip().replace("상태:", "").strip()
                     team_match = re.match(r"(.*) (\d+|vs) : (\d+|vs) (.*)", parts)
+
                     if not team_match:
-                        continue
+                        continue  # 잘못된 형식이면 건너뛰기
 
                     team1, score1_raw, score2_raw, team2 = team_match.groups()
 
@@ -203,11 +202,20 @@ def fan_message():
                     if count > 2:
                         continue  # DH2까지만 허용
 
-                    dh_suffix = f" (DH{count})" if total_matches >= 2 else ""
+                    dh_suffix = f" (DH{count})" if count > 1 else ""  # DH1, DH2 처리
 
                     team1_is_fan = team1 in fan_team_map
                     team2_is_fan = team2 in fan_team_map
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}{dh_suffix}"
+
+                    if "취소" in status:  # 어제 경기 취소 처리
+                        if team1_is_fan and team2_is_fan:
+                            messages.append(f"☁️ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기가 취소되었습니다.{dh_suffix}\n")
+                        elif team1_is_fan:
+                            messages.append(f"☁️ {fan_team_map[team1]}님,\n{team1} 경기 취소되었습니다.{dh_suffix}\n")
+                        elif team2_is_fan:
+                            messages.append(f"☁️ {fan_team_map[team2]}님,\n{team2} 경기 취소되었습니다.{dh_suffix}\n")
+                        continue
 
                     if team1_is_fan and team2_is_fan:
                         if score1 > score2:
@@ -250,6 +258,7 @@ def fan_message():
                 }]
             }
         })
+
 
 
 
