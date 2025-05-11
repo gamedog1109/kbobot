@@ -310,7 +310,7 @@ def generate_fan_message():
     
     return "\n".join(messages)
 
-@app.route("/fan_message_v2", methods=["GET"])
+@app.route("/fan_message_v2", methods=["POST"])
 def fan_message_v2():
     result_message = generate_fan_message()
     return jsonify({
