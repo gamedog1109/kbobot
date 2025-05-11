@@ -235,60 +235,92 @@ def fan_message():
 
 
 
-@app.route("/send_fan_message", methods=["POST"])  # 함수 이름을 send_fan_message로 변경
-def send_fan_message():
-    try:
-        with open('fans.json', 'r', encoding='utf-8') as f:
-            fan_data = json.load(f)
-        with open('series_games.json', 'r', encoding='utf-8') as f:
-            game_data = json.load(f)
+# 팬 데이터 로드
+with open('fans.json', 'r', encoding='utf-8') as f:
+    fan_data = json.load(f)
 
-        # 디버깅: game_data가 어떤 구조인지 확인
-        print(f"game_data: {game_data}")
+# 경기 결과 데이터 로드
+with open('series_games.json', 'r', encoding='utf-8') as f:
+    game_data = json.load(f)
+
+# 위닝 시리즈와 스윕을 판별하는 함수
+def determine_winning_series_and_sweep(games):
+    results = defaultdict(int)
+    sweep_teams = []
+    winning_series_teams = []
+
+    # 각 팀의 승패 기록을 저장
+    for game in games:
+        parts, status_raw = game.split(" - ")
+        status = status_raw.strip().replace("상태:", "").strip()
         
-        # game_data가 문자열일 경우, 이를 파싱하여 딕셔너리로 변환
-        if isinstance(game_data, str):
-            game_data = json.loads(game_data)
+        if "경기종료" not in status:
+            continue
 
-        # games 데이터가 없거나 올바르지 않으면 빈 리스트를 반환하도록 처리
-        if "games" not in game_data:
-            raise ValueError("게임 데이터가 없습니다.")
+        # 팀 정보 및 스코어 추출
+        team1, score1_raw, score2_raw, team2 = parts.split(" ")
+        score1, score2 = int(score1_raw), int(score2_raw)
         
-        games_by_date = game_data.get("games", {})
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        yesterday_str = sorted(games_by_date.keys())[-2] if today_str in games_by_date else sorted(games_by_date.keys())[-1]
-        fan_team_map = {v: k for k, v in fan_data.items()}
+        if score1 > score2:
+            results[team1] += 1
+        elif score2 > score1:
+            results[team2] += 1
 
-        messages = [f"📡 [최근 경기 결과 안내]\n"]
-        match_counter = defaultdict(int)
+    # 위닝 시리즈 및 스윕 판별
+    for team, wins in results.items():
+        if wins >= 2:
+            winning_series_teams.append(team)
+        if wins == 3:
+            sweep_teams.append(team)
 
-        # 위닝 시리즈 및 스윕 결과 얻기
-        series_results = check_winning_series_and_sweep(games_by_date, fan_team_map)
+    return sweep_teams, winning_series_teams
 
-        # 위닝 시리즈 및 스윕 결과 추가
-        messages.extend(series_results)
+# 결과 판별
+def generate_fan_message():
+    today_str = '2025-05-11'
+    yesterday_str = '2025-05-10'
+    fan_team_map = {v: k for k, v in fan_data.items()}  # 팬 데이터 맵
 
-        result_text = "\n".join(messages).strip()
+    messages = [f"📡 [최근 경기 결과 안내]\n"]
 
-        return jsonify({
-            "version": "2.0",
-            "template": {
-                "outputs": [{
-                    "simpleText": {"text": result_text}
-                }]
-            }
-        })
+    # 오늘 경기
+    today_games = game_data['games'][today_str]
+    sweep_teams, winning_series_teams = determine_winning_series_and_sweep(today_games)
+    
+    # 위닝 시리즈와 스윕에 대한 메시지 생성
+    for team in winning_series_teams:
+        if team in fan_team_map:
+            messages.append(f"🏆 {fan_team_map[team]}님, {team} 위닝 시리즈를 달성했습니다! 5,000원 찬조금 납부해 주세요.\n")
+    
+    for team in sweep_teams:
+        if team in fan_team_map:
+            messages.append(f"🔥 {fan_team_map[team]}님, {team} 스윕을 달성했습니다! 10,000원 찬조금 납부해 주세요.\n")
+    
+    # 어제 경기
+    yesterday_games = game_data['games'][yesterday_str]
+    sweep_teams, winning_series_teams = determine_winning_series_and_sweep(yesterday_games)
+    
+    for team in winning_series_teams:
+        if team in fan_team_map:
+            messages.append(f"🏆 {fan_team_map[team]}님, {team} 어제 위닝 시리즈를 달성했습니다! 5,000원 찬조금 납부해 주세요.\n")
+    
+    for team in sweep_teams:
+        if team in fan_team_map:
+            messages.append(f"🔥 {fan_team_map[team]}님, {team} 어제 스윕을 달성했습니다! 10,000원 찬조금 납부해 주세요.\n")
+    
+    return "\n".join(messages)
 
-    except Exception as e:
-        return jsonify({
-            "version": "2.0",
-            "template": {
-                "outputs": [{
-                    "simpleText": {"text": f"❌ 오류 발생: {str(e)}"}
-                }]
-            }
-        })
-
+@app.route("/fan_message_v2", methods=["GET"])
+def fan_message_v2():
+    result_message = generate_fan_message()
+    return jsonify({
+        "version": "2.0",
+        "template": {
+            "outputs": [{
+                "simpleText": {"text": result_message}
+            }]
+        }
+    })
 
 
 
