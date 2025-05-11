@@ -89,7 +89,7 @@ def fan_message():
     try:
         with open('fans.json', 'r', encoding='utf-8') as f:
             fan_data = json.load(f)
-        with open('today_games.json", 'r', encoding='utf-8') as f:
+        with open('today_games.json', 'r', encoding='utf-8') as f:
             game_data = json.load(f)
 
         games_by_date = game_data.get("games", {})
