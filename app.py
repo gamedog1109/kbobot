@@ -234,6 +234,7 @@ def fan_message():
 
 
 
+
 @app.route("/send_fan_message", methods=["POST"])  # 함수 이름을 send_fan_message로 변경
 def send_fan_message():
     try:
@@ -242,6 +243,13 @@ def send_fan_message():
         with open('series_games.json', 'r', encoding='utf-8') as f:
             game_data = json.load(f)
 
+        # 디버깅: game_data가 어떤 구조인지 확인
+        print(f"game_data: {game_data}")
+
+        # games 데이터가 없거나 올바르지 않으면 빈 리스트를 반환하도록 처리
+        if "games" not in game_data:
+            raise ValueError("게임 데이터가 없습니다.")
+        
         games_by_date = game_data.get("games", {})
         today_str = datetime.now().strftime("%Y-%m-%d")
         yesterday_str = sorted(games_by_date.keys())[-2] if today_str in games_by_date else sorted(games_by_date.keys())[-1]
@@ -276,6 +284,8 @@ def send_fan_message():
                 }]
             }
         })
+
+
 
 
 
