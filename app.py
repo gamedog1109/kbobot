@@ -9,7 +9,7 @@ from flask import Flask, jsonify
 app = Flask(__name__)
 
 # GitHub Pages에 JSON 파일이 업로드된 주소로 바꿔주세요
-JSON_URL = "https://github.com/gamedog1109/kbobot/today_games.json"
+JSON_URL = "https://gamedog1109.github.io/kbobot/today_games.json"
 
 
 @app.route("/webhook", methods=["POST"])
