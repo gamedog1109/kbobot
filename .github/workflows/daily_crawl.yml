@@ -2,14 +2,14 @@ name: Daily KBO Crawl
 
 on:
   schedule:
-    # 매일 KST 14:00~23:40, 20분 간격 → UTC 05:00~14:40
+    # KST 14:00 ~ 23:40 → UTC 05:00 ~ 14:40, 20분 간격
     - cron: '*/20 5-14 * * *'
-    # 금요일 00:00 → UTC 목요일 15:00
+    # KST 금요일 00:00 → UTC 목요일 15:00
     - cron: '0 15 * * 4'
-    # 월요일 00:00 → UTC 일요일 15:00
-    - cron: '0 15 * * 7'
+    # KST 월요일 00:00 → UTC 일요일 15:00 (주의: 0 = 일요일)
+    - cron: '0 15 * * 0'
 
-  workflow_dispatch:
+  workflow_dispatch:  # 수동 실행도 가능
 
 jobs:
   run:
@@ -37,10 +37,10 @@ jobs:
         pip install -r requirements.txt
         python -m playwright install --with-deps
 
-    - name: Run KBO crawler (conditional)
+    - name: Run KBO crawler (분기 실행)
       run: |
         echo "🕒 Current UTC Time: $(date -u)"
-        if [[ "$(date -u +%u)" == "4" && "$(date -u +%H)" == "15" ]] || [[ "$(date -u +%u)" == "7" && "$(date -u +%H)" == "15" ]]; then
+        if [[ "$(date -u +%u)" == "4" && "$(date -u +%H)" == "15" ]] || [[ "$(date -u +%u)" == "0" && "$(date -u +%H)" == "15" ]]; then
           echo "📘 Running crawler_3games.py"
           python crawler_3games.py
         else
