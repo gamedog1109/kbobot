@@ -84,45 +84,71 @@ def show_next_series():
 
 
 
-JSON_URL = "https://gamedog1109.github.io/kbobot/today_games.json"
-
-@app.route("/game_message", methods=["POST"])
-def game_message():
+@app.route("/fan_message", methods=["POST"])
+def fan_message():
     try:
-        res = requests.get(JSON_URL, timeout=5)
-        data = res.json()
-        game_list = data.get("games", [])
-        if not game_list:
-            message = "오늘의 경기가 없습니다."
-        else:
-            message = "\n".join(game_list)
+        with open('fans.json', 'r', encoding='utf-8') as f:
+            fan_data = json.load(f)
+        with open('today_games.json', 'r', encoding='utf-8') as f:
+            game_data = json.load(f)
+
+        games = game_data.get("games", [])
+        messages = []
+
+        for name, team in fan_data.items():
+            found = False
+            for game in games:
+                if team in game:
+                    found = True
+                    try:
+                        parts, status = game.split(" - ")
+                        team1, score1, score2, team2 = re.match(r"(.*) (\d+) : (\d+) (.*)", parts).groups()
+                        score1 = int(score1)
+                        score2 = int(score2)
+
+                        if team == team1:
+                            team_score, opp_score, opponent = score1, score2, team2
+                            score_line = f"{team1} {score1} : {score2} {team2}"
+                        elif team == team2:
+                            team_score, opp_score, opponent = score2, score1, team1
+                            score_line = f"{team1} {score1} : {score2} {team2}"
+                        else:
+                            continue  # 이 팬의 팀 아님
+
+                        if int(team_score) > int(opp_score):
+                            if status.strip() == "경기종료":
+                                msg = f"🎉 {name}님 축하합니다! {team}이 {opponent}에게 승리했습니다. ({score_line})"
+                            else:
+                                msg = f"🔥 {name}님, {team}이 {opponent}를 상대로 이기고 있습니다! ({score_line})"
+                            messages.append(msg)
+                        else:
+                            continue  # 패배 or 무승부는 무시
+                    except:
+                        messages.append(f"⚠️ {name}님, {team} 경기 정보 해석 실패")
+                    break
+            if not found:
+                messages.append(f"ℹ️ {name}님, {team}은 오늘 경기 중이 아닙니다.")
+        
+        result_text = "\n".join(messages)
+
         return jsonify({
             "version": "2.0",
             "template": {
-                "outputs": [
-                    {
-                        "simpleText": {
-                            "text": message
-                        }
-                    }
-                ]
+                "outputs": [{
+                    "simpleText": {"text": result_text}
+                }]
             }
         })
+
     except Exception as e:
         return jsonify({
             "version": "2.0",
             "template": {
-                "outputs": [
-                    {
-                        "simpleText": {
-                            "text": f"[오류 발생] {str(e)}"
-                        }
-                    }
-                ]
+                "outputs": [{
+                    "simpleText": {"text": f"❌ 오류 발생: {str(e)}"}
+                }]
             }
         })
-
-
 
 
 
