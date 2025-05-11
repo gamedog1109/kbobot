@@ -164,10 +164,12 @@ def fan_message():
                     # 오늘 실시간 경기
                     if "회" in status:
                         inning = status
-                        if team1_is_fan:
-                            messages.append(f"🔥 {fan_team_map[team1]}님,\n{team1} 현재 {inning} 진행 중. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
-                        if team2_is_fan:
-                            messages.append(f"🔥 {fan_team_map[team2]}님,\n{team2} 현재 {inning} 진행 중. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
+                        if team1_is_fan and team2_is_fan:
+                            messages.append(f"🔥 {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} 현재 {inning} 진행 중. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                        elif team1_is_fan:
+                            messages.append(f"🔥 {fan_team_map[team1]}님\n{team1} 현재 {inning} 진행 중. 상대: {team2}{dh_suffix}\n📊 {score_line}\n")
+                        elif team2_is_fan:
+                            messages.append(f"🔥 {fan_team_map[team2]}님\n{team2} 현재 {inning} 진행 중. 상대: {team1}{dh_suffix}\n📊 {score_line}\n")
 
                 except:
                     continue
@@ -248,8 +250,6 @@ def fan_message():
                 }]
             }
         })
-
-
 
 
 
