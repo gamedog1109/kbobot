@@ -280,14 +280,14 @@ def generate_messages():
     messages = []
     fan_teams = list(fans.values())
 
-    # 팬 팀 간 조합만 추출
+    # 팬 팀 간 조합
     matchups = []
     for team1 in fan_teams:
         for team2 in fan_teams:
             if team1 < team2:
                 matchups.append((team1, team2))
 
-    result_by_team = defaultdict(lambda: {"remark": "", "donation": 0})
+    result_by_team = defaultdict(lambda: {"remark": "", "donation": 0, "opponent": ""})
 
     for team1, team2 in matchups:
         team1_wins = team2_wins = 0
@@ -309,25 +309,29 @@ def generate_messages():
                 elif score2 > score1:
                     team2_wins += 1
 
+        # 결과 저장 (상대 포함)
         if team1_wins == 3:
-            result_by_team[team1]["remark"] = "스윕 🎉"
-            result_by_team[team1]["donation"] = 10000
+            result_by_team[team1] = {"remark": "스윕 🎉", "donation": 10000, "opponent": team2}
         elif team1_wins == 2:
-            result_by_team[team1]["remark"] = "위닝 👍"
-            result_by_team[team1]["donation"] = 5000
+            result_by_team[team1] = {"remark": "위닝 👍", "donation": 5000, "opponent": team2}
         if team2_wins == 3:
-            result_by_team[team2]["remark"] = "스윕 🎉"
-            result_by_team[team2]["donation"] = 10000
+            result_by_team[team2] = {"remark": "스윕 🎉", "donation": 10000, "opponent": team1}
         elif team2_wins == 2:
-            result_by_team[team2]["remark"] = "위닝 👍"
-            result_by_team[team2]["donation"] = 5000
+            result_by_team[team2] = {"remark": "위닝 👍", "donation": 5000, "opponent": team1}
 
     for name, team in fans.items():
         wins = records[team]["wins"]
         losses = records[team]["losses"]
-        remark = result_by_team[team]["remark"] or "노 위닝"
-        donation = result_by_team[team]["donation"]
-        msg = f"[{name}] {team} {wins}승 {losses}패 | {remark} | 찬조금 {donation:,}원"
+        result = result_by_team[team]
+        remark = result["remark"]
+        opponent = result["opponent"]
+        donation = result["donation"]
+
+        if remark:
+            remark_str = f"{remark} (vs {opponent})"
+        else:
+            remark_str = "노 위닝"
+        msg = f"[{name}] {team} {wins}승 {losses}패 | {remark_str} | 찬조금 {donation:,}원"
         messages.append(msg)
 
     return messages
