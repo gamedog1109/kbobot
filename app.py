@@ -116,15 +116,21 @@ def fan_message():
 
                     team1, score1_raw, score2_raw, team2 = team_match.groups()
 
-                    # DH 구분용 카운터
+                    # 경기 수 카운트용 키
                     matchup_key = f"{date}_{team1}_{team2}"
                     match_counter[matchup_key] += 1
                     count = match_counter[matchup_key]
 
+                    # 총 동일 경기 수 확인
+                    total_matches = sum(
+                        1 for g in games
+                        if re.match(rf"{re.escape(team1)} (?:\d+|vs) : (?:\d+|vs) {re.escape(team2)}", g.split(" - ")[0])
+                    )
+
                     if count > 2:
                         continue  # DH2까지만 허용
 
-                    dh_suffix = f" (DH{count})"
+                    dh_suffix = f" (DH{count})" if total_matches >= 2 else ""
 
                     team1_is_fan = team1 in fan_team_map
                     team2_is_fan = team2 in fan_team_map
@@ -135,9 +141,9 @@ def fan_message():
                         if team1_is_fan and team2_is_fan:
                             messages.append(f"⏳ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기 예정입니다.{dh_suffix}\n")
                         elif team1_is_fan:
-                            messages.append(f"⏳ {fan_team_map[team1]}님\n{team1} 경기 예정입니다.{dh_suffix}\n")
+                            messages.append(f"⏳ {fan_team_map[team1]}님\n{team1} vs {team2} 경기 예정입니다.{dh_suffix}\n")
                         elif team2_is_fan:
-                            messages.append(f"⏳ {fan_team_map[team2]}님\n{team2} 경기 예정입니다.{dh_suffix}\n")
+                            messages.append(f"⏳ {fan_team_map[team2]}님\n{team2} vs {team1} 경기 예정입니다.{dh_suffix}\n")
                         continue
 
                     # 취소 경기
@@ -206,7 +212,6 @@ def fan_message():
                 }]
             }
         })
-
 
 @app.route("/")
 def index():
