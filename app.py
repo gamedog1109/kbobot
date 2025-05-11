@@ -121,16 +121,14 @@ def fan_message():
                     match_counter[matchup_key] += 1
                     count = match_counter[matchup_key]
 
-                    # 총 동일 경기 수 확인
+                    # 동일 날짜에 총 경기 수 확인
                     total_matches = sum(
                         1 for g in games
                         if re.match(rf"{re.escape(team1)} (?:\d+|vs) : (?:\d+|vs) {re.escape(team2)}", g.split(" - ")[0])
                     )
 
-                    if count > 2:
-                        continue  # DH2까지만 허용
-
-                    dh_suffix = f" (DH{count})" if total_matches >= 2 else ""
+                    # 동일 날짜에 1경기만 있으면 DH를 붙이지 않음
+                    dh_suffix = f" (DH{count})" if total_matches > 1 else ""
 
                     team1_is_fan = team1 in fan_team_map
                     team2_is_fan = team2 in fan_team_map
@@ -228,6 +226,8 @@ def fan_message():
                 }]
             }
         })
+
+
 
 
 
