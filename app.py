@@ -104,9 +104,12 @@ def fan_message():
         yesterday_str = sorted(games_by_date.keys())[-2] if today_str in games_by_date else sorted(games_by_date.keys())[-1]
         fan_team_map = {v: k for k, v in fan_data.items()}
 
-        messages = []
+        messages = [f"📡 [최근 경기 결과 안내]\n"]
 
         for date, games in games_by_date.items():
+            date_label = "🕘 어제 경기" if date == yesterday_str else "🟢 오늘 경기"
+            messages.append(f"{date_label} ({date})\n")
+
             for game in games:
                 try:
                     parts, status_raw = game.split(" - ")
@@ -122,16 +125,20 @@ def fan_message():
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}"
 
                     if score1_raw == "vs" or score2_raw == "vs":
-                        continue  # 경기 미진행
+                        if team1_is_fan:
+                            messages.append(f"☁️ {fan_team_map[team1]}님,\n{team1} 경기 취소되었습니다.\n")
+                        if team2_is_fan:
+                            messages.append(f"☁️ {fan_team_map[team2]}님,\n{team2} 경기 취소되었습니다.\n")
+                        continue
 
                     score1, score2 = int(score1_raw), int(score2_raw)
 
                     if date == yesterday_str:
                         if team1_is_fan and team2_is_fan:
                             if score1 > score2:
-                                messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다! {team1}이 {team2}에게 승리했습니다. ({score_line})")
+                                messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다!\n{team1} 승리했습니다. 상대: {team2}\n📊 {score_line}\n")
                             elif score2 > score1:
-                                messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다! {team2}이 {team1}에게 승리했습니다. ({score_line})")
+                                messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다!\n{team2} 승리했습니다. 상대: {team1}\n📊 {score_line}\n")
                         elif team1_is_fan or team2_is_fan:
                             team = team1 if team1_is_fan else team2
                             opp = team2 if team1_is_fan else team1
@@ -139,11 +146,11 @@ def fan_message():
                             team_score = score1 if team1_is_fan else score2
                             opp_score = score2 if team1_is_fan else score1
                             if team_score > opp_score:
-                                messages.append(f"🎉 {fan_name}님 축하합니다! {team}이 {opp}에게 승리했습니다. ({score_line})")
+                                messages.append(f"🎉 {fan_name}님 축하합니다!\n{team} 승리했습니다. 상대: {opp}\n📊 {score_line}\n")
                             elif team_score < opp_score:
-                                messages.append(f"😢 {fan_name}님 아쉽습니다. {team}이 {opp}에게 패배했습니다. ({score_line})")
+                                messages.append(f"😢 {fan_name}님 아쉽습니다.\n{team} 패배했습니다. 상대: {opp}\n📊 {score_line}\n")
                         else:
-                            messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀 ({score_line})")
+                            messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀\n📊 {score_line}\n")
 
                     elif date == today_str:
                         if "예정" in status:
@@ -151,14 +158,14 @@ def fan_message():
                         elif "회" in status:
                             inning = status
                             if team1_is_fan:
-                                messages.append(f"🔥 {fan_team_map[team1]}님, {team1}이 {team2}와 {inning} 경기 중입니다. ({score_line})")
+                                messages.append(f"🔥 {fan_team_map[team1]}님,\n{team1} 현재 {inning} 진행 중. 상대: {team2}\n📊 {score_line}\n")
                             if team2_is_fan:
-                                messages.append(f"🔥 {fan_team_map[team2]}님, {team2}이 {team1}와 {inning} 경기 중입니다. ({score_line})")
+                                messages.append(f"🔥 {fan_team_map[team2]}님,\n{team2} 현재 {inning} 진행 중. 상대: {team1}\n📊 {score_line}\n")
 
                 except:
                     continue
 
-        result_text = "📡 [최근 경기 결과 안내]\n\n" + "\n".join(messages)
+        result_text = "\n".join(messages).strip()
 
         return jsonify({
             "version": "2.0",
@@ -178,8 +185,6 @@ def fan_message():
                 }]
             }
         })
-
-
 
 
 
