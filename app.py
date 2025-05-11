@@ -84,6 +84,13 @@ def show_next_series():
 
 
 
+from flask import Flask, request, jsonify
+import json
+import re
+from datetime import datetime
+
+app = Flask(__name__)
+
 @app.route("/fan_message", methods=["POST"])
 def fan_message():
     try:
@@ -107,7 +114,7 @@ def fan_message():
                     team_match = re.match(r"(.*) (\d+|vs) : (\d+|vs) (.*)", parts)
 
                     if not team_match:
-                        continue  # 잘못된 형식
+                        continue
 
                     team1, score1_raw, score2_raw, team2 = team_match.groups()
                     team1_is_fan = team1 in fan_team_map
@@ -115,12 +122,7 @@ def fan_message():
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}"
 
                     if score1_raw == "vs" or score2_raw == "vs":
-                        # 경기 취소 또는 미진행
-                        if team1_is_fan:
-                            messages.append(f"☁️ {fan_team_map[team1]}님, {team1} 경기 진행되지 않았습니다. ({status})")
-                        if team2_is_fan:
-                            messages.append(f"☁️ {fan_team_map[team2]}님, {team2} 경기 진행되지 않았습니다. ({status})")
-                        continue
+                        continue  # 경기 미진행
 
                     score1, score2 = int(score1_raw), int(score2_raw)
 
@@ -130,8 +132,6 @@ def fan_message():
                                 messages.append(f"🎉 {fan_team_map[team1]}님 축하합니다! {team1}이 {team2}에게 승리했습니다. ({score_line})")
                             elif score2 > score1:
                                 messages.append(f"🎉 {fan_team_map[team2]}님 축하합니다! {team2}이 {team1}에게 승리했습니다. ({score_line})")
-                            else:
-                                messages.append(f"⚖️ {fan_team_map[team1]}님과 {fan_team_map[team2]}님, {team1}과 {team2}가 비겼습니다. ({score_line})")
                         elif team1_is_fan or team2_is_fan:
                             team = team1 if team1_is_fan else team2
                             opp = team2 if team1_is_fan else team1
@@ -142,15 +142,12 @@ def fan_message():
                                 messages.append(f"🎉 {fan_name}님 축하합니다! {team}이 {opp}에게 승리했습니다. ({score_line})")
                             elif team_score < opp_score:
                                 messages.append(f"😢 {fan_name}님 아쉽습니다. {team}이 {opp}에게 패배했습니다. ({score_line})")
-                            else:
-                                messages.append(f"⚖️ {fan_name}님, {team}이 {opp}와 비겼습니다. ({score_line})")
+                        else:
+                            messages.append(f"💤 {team1} vs {team2} — 노잼 경기입니다 👀 ({score_line})")
 
                     elif date == today_str:
                         if "예정" in status:
-                            if team1_is_fan:
-                                messages.append(f"📅 {fan_team_map[team1]}님, {team1} 경기는 아직 시작되지 않았습니다.")
-                            if team2_is_fan:
-                                messages.append(f"📅 {fan_team_map[team2]}님, {team2} 경기는 아직 시작되지 않았습니다.")
+                            continue
                         elif "회" in status:
                             inning = status
                             if team1_is_fan:
@@ -161,7 +158,7 @@ def fan_message():
                 except:
                     continue
 
-        result_text = "\n".join(messages)
+        result_text = "📡 [최근 경기 결과 안내]\n\n" + "\n".join(messages)
 
         return jsonify({
             "version": "2.0",
@@ -181,8 +178,6 @@ def fan_message():
                 }]
             }
         })
-
-
 
 
 
