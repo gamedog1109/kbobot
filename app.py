@@ -235,92 +235,62 @@ def fan_message():
 
 
 
-# 팬 데이터 로드
+# 파일 불러오기
 with open('fans.json', 'r', encoding='utf-8') as f:
-    fan_data = json.load(f)
+    fans_data = json.load(f)
 
-# 경기 결과 데이터 로드
 with open('series_games.json', 'r', encoding='utf-8') as f:
-    game_data = json.load(f)
+    series_games = json.load(f)
 
-# 위닝 시리즈와 스윕을 판별하는 함수
-def determine_winning_series_and_sweep(games):
-    results = defaultdict(int)
-    sweep_teams = []
-    winning_series_teams = []
+# 팬과 팀 매핑
+fan_team_map = {v: k for k, v in fans_data.items()}
 
-    # 각 팀의 승패 기록을 저장
-    for game in games:
-        parts, status_raw = game.split(" - ")
-        status = status_raw.strip().replace("상태:", "").strip()
-        
-        if "경기종료" not in status:
-            continue
+# 찬조금 부과할 팀 결정
+def determine_winning_series_and_sweep():
+    game_results = series_games['games']
+    results = {}
 
-        # 팀 정보 및 스코어 추출
-        team1, score1_raw, score2_raw, team2 = parts.split(" ")
-        score1, score2 = int(score1_raw), int(score2_raw)
-        
-        if score1 > score2:
-            results[team1] += 1
-        elif score2 > score1:
-            results[team2] += 1
+    for date, games in game_results.items():
+        winning_teams = []
+        losing_teams = []
 
-    # 위닝 시리즈 및 스윕 판별
-    for team, wins in results.items():
-        if wins >= 2:
-            winning_series_teams.append(team)
-        if wins == 3:
-            sweep_teams.append(team)
+        for game in games:
+            teams = game.split(' - ')[0].split(' vs ')
+            score = game.split(' - ')[1].split(' ')[0]
+            status = game.split(' - ')[1].split(' ')[1]
+            
+            if status == "경기종료":
+                team1, team2 = teams
+                score1, score2 = map(int, score.split(' : '))
+                if score1 > score2:
+                    winning_teams.append(team1)
+                    losing_teams.append(team2)
+                else:
+                    winning_teams.append(team2)
+                    losing_teams.append(team1)
 
-    return sweep_teams, winning_series_teams
+        if winning_teams:
+            winning_team = max(set(winning_teams), key=winning_teams.count)
+            if winning_teams.count(winning_team) >= 2:  # 위닝 시리즈
+                results[winning_team] = "위닝 시리즈"
+            if winning_teams.count(winning_team) == 3:  # 스윕
+                results[winning_team] = "스윕"
 
-# 결과 판별
-def generate_fan_message():
-    today_str = '2025-05-11'
-    yesterday_str = '2025-05-10'
-    fan_team_map = {v: k for k, v in fan_data.items()}  # 팬 데이터 맵
+    return results
 
-    messages = [f"📡 [최근 경기 결과 안내]\n"]
+# 팬에게 찬조금 부과하는 API 엔드포인트
+@app.route('/fan_contribution', methods=['GET'])
+def fan_contribution():
+    results = determine_winning_series_and_sweep()
+    contributions = []
 
-    # 오늘 경기
-    today_games = game_data['games'][today_str]
-    sweep_teams, winning_series_teams = determine_winning_series_and_sweep(today_games)
-    
-    # 위닝 시리즈와 스윕에 대한 메시지 생성
-    for team in winning_series_teams:
-        if team in fan_team_map:
-            messages.append(f"🏆 {fan_team_map[team]}님, {team} 위닝 시리즈를 달성했습니다! 5,000원 찬조금 납부해 주세요.\n")
-    
-    for team in sweep_teams:
-        if team in fan_team_map:
-            messages.append(f"🔥 {fan_team_map[team]}님, {team} 스윕을 달성했습니다! 10,000원 찬조금 납부해 주세요.\n")
-    
-    # 어제 경기
-    yesterday_games = game_data['games'][yesterday_str]
-    sweep_teams, winning_series_teams = determine_winning_series_and_sweep(yesterday_games)
-    
-    for team in winning_series_teams:
-        if team in fan_team_map:
-            messages.append(f"🏆 {fan_team_map[team]}님, {team} 어제 위닝 시리즈를 달성했습니다! 5,000원 찬조금 납부해 주세요.\n")
-    
-    for team in sweep_teams:
-        if team in fan_team_map:
-            messages.append(f"🔥 {fan_team_map[team]}님, {team} 어제 스윕을 달성했습니다! 10,000원 찬조금 납부해 주세요.\n")
-    
-    return "\n".join(messages)
+    # 찬조금을 부과할 팬들
+    for team, result in results.items():
+        fans_of_team = [fan for fan, fan_team in fan_team_map.items() if fan_team == team]
+        for fan in fans_of_team:
+            contributions.append(f"{fan}님은 {team}팀이 {result}을 했기 때문에 찬조금을 부과합니다.")
 
-@app.route("/fan_message_v2", methods=["POST"])
-def fan_message_v2():
-    result_message = generate_fan_message()
-    return jsonify({
-        "version": "2.0",
-        "template": {
-            "outputs": [{
-                "simpleText": {"text": result_message}
-            }]
-        }
-    })
+    return jsonify({"message": contributions})
 
 
 
