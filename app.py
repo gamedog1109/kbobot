@@ -101,11 +101,14 @@ def fan_message():
                 if team in game:
                     found = True
                     try:
-                        parts, status = game.split(" - ")
+                        parts, status_raw = game.split(" - ")
+                        status = status_raw.strip().replace("상태:", "").strip()
+
                         team1, score1, score2, team2 = re.match(r"(.*) (\d+) : (\d+) (.*)", parts).groups()
                         score1 = int(score1)
                         score2 = int(score2)
 
+                        # 응원팀이 어느 쪽인지 판단
                         if team == team1:
                             team_score, opp_score, opponent = score1, score2, team2
                             score_line = f"{team1} {score1} : {score2} {team2}"
@@ -113,16 +116,18 @@ def fan_message():
                             team_score, opp_score, opponent = score2, score1, team1
                             score_line = f"{team1} {score1} : {score2} {team2}"
                         else:
-                            continue  # 이 팬의 팀 아님
+                            continue
 
-                        if int(team_score) > int(opp_score):
-                            if status.strip() == "경기종료":
+                        # 이기고 있을 때만 메시지 출력
+                        if team_score > opp_score:
+                            if "경기종료" in status:
                                 msg = f"🎉 {name}님 축하합니다! {team}이 {opponent}에게 승리했습니다. ({score_line})"
+                            elif "회" in status or "중" in status:
+                                msg = f"🔥 {name}님, {team}이 {opponent}를 상대로 이기고 있습니다. ({score_line})"
                             else:
-                                msg = f"🔥 {name}님, {team}이 {opponent}를 상대로 이기고 있습니다! ({score_line})"
+                                msg = f"ℹ️ {name}님, {team} 경기 상태: {status} (점수: {score_line})"
                             messages.append(msg)
-                        else:
-                            continue  # 패배 or 무승부는 무시
+                        # 지거나 비긴 경우는 무시
                     except:
                         messages.append(f"⚠️ {name}님, {team} 경기 정보 해석 실패")
                     break
@@ -149,7 +154,6 @@ def fan_message():
                 }]
             }
         })
-
 
 
 
