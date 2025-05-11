@@ -7,6 +7,8 @@ from kbo_weather_checker import build_weather_message
 from next_series import get_next_series_info
 import re
 from flask import Flask, jsonify
+import os
+
 
 app = Flask(__name__)
 
