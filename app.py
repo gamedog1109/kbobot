@@ -304,12 +304,13 @@ def generate_messages():
 @app.route("/donation_summary", methods=["POST"])
 def donation_summary():
     messages = generate_messages()
+    footer = "\n\n🔁 찬조금 납부 내용 업데이트는 목/일요일 24:00 예정"
     return jsonify({
         "version": "2.0",
         "template": {
             "outputs": [{
                 "simpleText": {
-                    "text": "📢 이번 시리즈 찬조금 납부\n\n" + "\n".join(messages)
+                    "text": "📢 이번 시리즈 찬조금 납부\n\n" + "\n".join(messages) + footer
                 }
             }]
         }

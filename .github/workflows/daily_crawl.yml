@@ -2,11 +2,16 @@ name: Daily KBO Crawl
 
 on:
   schedule:
-    # KST 14:00 ~ 23:00 (UTC 05:00 ~ 14:00) 매 20분마다 실행
-    - cron: '*/20 5-14 * * *'  
-    # KST 23:00 ~ 14:00 (UTC 14:00 ~ 05:00) 동안은 실행되지 않음
-    - cron: '0 0-4 * * *'  # 이 부분은 비활성화된 상태 (빈 시간에 수행되지 않음)
-  workflow_dispatch:        # 수동 실행도 가능
+    # KST 14:00 ~ 23:00 → 매 20분마다 today_games 크롤링
+    - cron: '*/20 5-14 * * *'
+    
+    # KST 금요일 00:00 → UTC 목요일 15:00
+    - cron: '0 15 * * 4'
+    
+    # KST 월요일 00:00 → UTC 일요일 15:00
+    - cron: '0 15 * * 0'
+
+  workflow_dispatch:
 
 jobs:
   run:
@@ -34,13 +39,21 @@ jobs:
         pip install -r requirements.txt
         python -m playwright install --with-deps
 
+    # 🎯 조건 분기 실행
     - name: Run KBO crawler
-      run: python crawler.py
+      run: |
+        if [[ "$(date -u +%u)" == "4" && "$(date -u +%H)" == "15" ]] || [[ "$(date -u +%u)" == "0" && "$(date -u +%H)" == "15" ]]; then
+          echo "Running crawler_3games.py"
+          python crawler_3games.py
+        else
+          echo "Running crawler.py"
+          python crawler.py
+        fi
 
     - name: Force push to remote repository
       run: |
         git config user.name "GitHub Action"
         git config user.email "action@github.com"
-        git add today_games.json
-        git commit -m "auto: update today_games.json"
+        git add .
+        git commit -m "auto: update game data"
         git push --force https://github-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:main
