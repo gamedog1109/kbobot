@@ -1,4 +1,6 @@
 import json
+import requests
+
 from flask import Flask, request, jsonify
 from today_games import get_today_game_info
 from kbo_weather_checker import build_weather_message
