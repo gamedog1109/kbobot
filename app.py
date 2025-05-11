@@ -242,7 +242,7 @@ with open("series_games.json", "r", encoding="utf-8") as f:
 with open("fans.json", "r", encoding="utf-8") as f:
     fans = json.load(f)
 
-# ✅ 팀별 승패 집계 함수
+# ✅ 팀별 전체 승패 집계
 def get_team_records():
     pattern = re.compile(r"(.+?)\s(\d+)\s:\s(\d+)\s(.+)")
     records = defaultdict(lambda: {'wins': 0, 'losses': 0})
@@ -261,8 +261,6 @@ def get_team_records():
                 continue
             team1, score1, score2, team2 = match.groups()
             score1, score2 = int(score1), int(score2)
-            records[team1]
-            records[team2]
             if score1 > score2:
                 records[team1]['wins'] += 1
                 records[team2]['losses'] += 1
@@ -278,29 +276,63 @@ def generate_messages():
     df = pd.DataFrame.from_dict(records, orient="index")
     df.index.name = "team"
     df = df.reset_index()
-    df['remark'] = df['wins'].apply(lambda w: '스윕 🎉' if w == 3 else ('위닝 👍' if w == 2 else ''))
 
     messages = []
+    fan_teams = list(fans.values())
+
+    # 팬 팀 간 조합만 추출
+    matchups = []
+    for team1 in fan_teams:
+        for team2 in fan_teams:
+            if team1 < team2:
+                matchups.append((team1, team2))
+
+    result_by_team = defaultdict(lambda: {"remark": "", "donation": 0})
+
+    for team1, team2 in matchups:
+        team1_wins = team2_wins = 0
+        for date, games in game_data['games'].items():
+            for game in games:
+                if "상태: 경기종료" not in game:
+                    continue
+                pattern = re.match(rf"({team1})\s(\d+)\s:\s(\d+)\s({team2})", game)
+                reverse_pattern = re.match(rf"({team2})\s(\d+)\s:\s(\d+)\s({team1})", game)
+                if pattern:
+                    _, score1, score2, _ = pattern.groups()
+                elif reverse_pattern:
+                    _, score2, score1, _ = reverse_pattern.groups()
+                else:
+                    continue
+                score1, score2 = int(score1), int(score2)
+                if score1 > score2:
+                    team1_wins += 1
+                elif score2 > score1:
+                    team2_wins += 1
+
+        if team1_wins == 3:
+            result_by_team[team1]["remark"] = "스윕 🎉"
+            result_by_team[team1]["donation"] = 10000
+        elif team1_wins == 2:
+            result_by_team[team1]["remark"] = "위닝 👍"
+            result_by_team[team1]["donation"] = 5000
+        if team2_wins == 3:
+            result_by_team[team2]["remark"] = "스윕 🎉"
+            result_by_team[team2]["donation"] = 10000
+        elif team2_wins == 2:
+            result_by_team[team2]["remark"] = "위닝 👍"
+            result_by_team[team2]["donation"] = 5000
+
     for name, team in fans.items():
-        row = df[df['team'] == team]
-        if row.empty:
-            msg = f"[{name}] {team} | 경기 없음"
-        else:
-            wins = row.iloc[0]['wins']
-            losses = row.iloc[0]['losses']
-            remark = row.iloc[0]['remark']
-            if remark == '스윕 🎉':
-                donation = 10000
-            elif remark == '위닝 👍':
-                donation = 5000
-            else:
-                donation = 0
-            msg = f"[{name}] {team} {wins}승 {losses}패 | {remark or '노 위닝'} | 찬조금 {donation:,}원"
+        wins = records[team]["wins"]
+        losses = records[team]["losses"]
+        remark = result_by_team[team]["remark"] or "노 위닝"
+        donation = result_by_team[team]["donation"]
+        msg = f"[{name}] {team} {wins}승 {losses}패 | {remark} | 찬조금 {donation:,}원"
         messages.append(msg)
 
     return messages
 
-# ✅ 카카오톡 챗봇 응답용 API
+# ✅ 카카오톡 챗봇 응답 API
 @app.route("/donation_summary", methods=["POST"])
 def donation_summary():
     messages = generate_messages()
@@ -315,7 +347,6 @@ def donation_summary():
             }]
         }
     })
-
 
 
 
