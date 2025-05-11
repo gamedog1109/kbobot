@@ -241,17 +241,17 @@ def fan_message():
 
         games_by_date = game_data.get("games", {})
         today_str = datetime.now().strftime("%Y-%m-%d")
+        yesterday_str = sorted(games_by_date.keys())[-2] if today_str in games_by_date else sorted(games_by_date.keys())[-1]
         fan_team_map = {v: k for k, v in fan_data.items()}
 
         messages = [f"📡 [오늘 경기 결과 안내]\n"]
         match_counter = defaultdict(int)
 
-        # 오늘 경기만 처리
-        if today_str in games_by_date:
-            date_label = "🟢 오늘 경기"
-            messages.append(f"{date_label} ({today_str})\n")
+        for date, games in games_by_date.items():
+            date_label = "🟢 오늘 경기" if date == today_str else "🕘 어제 경기"
+            messages.append(f"{date_label} ({date})\n")
 
-            for game in games_by_date[today_str]:
+            for game in games:
                 try:
                     parts, status_raw = game.split(" - ")
                     status = status_raw.strip().replace("상태:", "").strip()
@@ -262,13 +262,13 @@ def fan_message():
                     team1, score1_raw, score2_raw, team2 = team_match.groups()
 
                     # 경기 수 카운트용 키
-                    matchup_key = f"{today_str}_{team1}_{team2}"
+                    matchup_key = f"{date}_{team1}_{team2}"
                     match_counter[matchup_key] += 1
                     count = match_counter[matchup_key]
 
                     # 동일 날짜에 총 경기 수 확인
                     total_matches = sum(
-                        1 for g in games_by_date[today_str]
+                        1 for g in games
                         if re.match(rf"{re.escape(team1)} (?:\d+|vs) : (?:\d+|vs) {re.escape(team2)}", g.split(" - ")[0])
                     )
 
@@ -280,7 +280,7 @@ def fan_message():
                     score_line = f"{team1} {score1_raw} : {score2_raw} {team2}{dh_suffix}"
 
                     # 오늘 예정 경기
-                    if "예정" in status:
+                    if date == today_str and "예정" in status:
                         if team1_is_fan and team2_is_fan:
                             messages.append(f"⏳ {fan_team_map[team1]}님, {fan_team_map[team2]}님\n{team1} vs {team2} 경기 예정입니다.{dh_suffix}\n")
                         elif team1_is_fan:
@@ -328,6 +328,12 @@ def fan_message():
                             else:
                                 messages.append(f"⚖️ {team1}와 {team2}가 비겼습니다. ({score_line})\n")
 
+                    # 어제 경기 결과
+                    # 어제 경기는 안내하지 않음
+
+                except:
+                    continue
+
         result_text = "\n".join(messages).strip()
 
         return jsonify({
@@ -348,7 +354,6 @@ def fan_message():
                 }]
             }
         })
-
 
 
 
