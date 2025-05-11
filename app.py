@@ -80,11 +80,13 @@ def show_next_series():
 
 
 
+JSON_URL = "https://gamedog1109.github.io/kbobot/today_games.json"
+
 @app.route("/game_message", methods=["POST"])
 def game_message():
     try:
-        with open('today_games.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        res = requests.get(JSON_URL, timeout=5)
+        data = res.json()
         game_list = data.get("games", [])
         if not game_list:
             message = "오늘의 경기가 없습니다."
@@ -115,8 +117,6 @@ def game_message():
                 ]
             }
         })
-
-
 
 
 
